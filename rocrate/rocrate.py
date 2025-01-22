@@ -31,6 +31,7 @@ from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urljoin
 
+from .memory_buffer import MemoryBuffer
 from .model import (
     ComputationalWorkflow,
     ComputerLanguage,
@@ -467,17 +468,43 @@ class ROCrate():
 
     write_crate = write  # backwards compatibility
 
-    def write_zip(self, out_path):
+    def write_zip(self, out_path, stream=True):
         out_path = Path(out_path)
-        if out_path.suffix == ".zip":
-            out_path = out_path.parent / out_path.stem
-        tmp_dir = tempfile.mkdtemp(prefix="rocrate_")
-        try:
-            self.write(tmp_dir)
-            archive = shutil.make_archive(out_path, "zip", tmp_dir)
-        finally:
-            shutil.rmtree(tmp_dir)
-        return archive
+        if stream:
+            with open(out_path, "wb") as out_file:
+                for chunk in self.stream_zip():
+                    out_file.write(chunk)
+            return out_path
+        else:
+            if out_path.suffix == ".zip":
+                out_path = out_path.parent / out_path.stem
+            tmp_dir = tempfile.mkdtemp(prefix="rocrate_")
+            try:
+                self.write(tmp_dir)
+                archive = shutil.make_archive(out_path, "zip", tmp_dir)
+            finally:
+                shutil.rmtree(tmp_dir)
+            return archive
+
+    def stream_zip(self):
+        """ Create a stream of bytes representing the RO-Crate as a ZIP file. """
+        buffer = MemoryBuffer()
+        with zipfile.ZipFile(buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as archive:
+            entities = self.data_entities + self.default_entities
+            for writeable_entity in entities: #self.data_entities + self.default_entities:
+                current_file_path, current_out_file = None, None
+                for path, chunk in writeable_entity.stream():
+                    if path != current_file_path:
+                        if current_out_file:
+                            current_out_file.close()
+                        current_file_path = path
+                        current_out_file = archive.open(path, mode='w')
+                    current_out_file.write(chunk)
+                    yield buffer.read()
+                if current_out_file:
+                    current_out_file.close()
+        yield buffer.read()
+        buffer.close()
 
     def add_workflow(
             self, source=None, dest_path=None, fetch_remote=False, validate_url=False, properties=None,

@@ -34,9 +34,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .
         pip install flake8 flake8-annotations pytest
+        pip install mypy
+        pip install types-python-dateutil types-requests types-setuptools
+        mypy --install-types --non-interactive rocrate
     - name: Lint with flake8
       run: |
         flake8 -v .
+    - name: Type check with mypy
+      run: |
+        mypy rocrate
     - name: Test
       run: |
         pytest -v test

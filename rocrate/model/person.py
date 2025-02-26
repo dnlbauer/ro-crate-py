@@ -22,14 +22,19 @@
 # limitations under the License.
 
 from .contextentity import ContextEntity
+from typing import Optional
+import typing
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class Person(ContextEntity):
 
-    def __init__(self, crate, identifier=None, properties=None):
+    def __init__(self, crate: "ROCrate", identifier: Optional[str] = None, properties: Optional[dict] = None) -> None:
         super(Person, self).__init__(crate, identifier, properties)
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         val = {
             "@id": self.id,
             "@type": 'Person'

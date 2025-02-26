@@ -22,28 +22,35 @@
 # limitations under the License.
 
 import os
+import typing
 from datetime import datetime, timezone
+from typing import Any, Generator, Dict, Optional
 from urllib.parse import urlsplit
 
+from rocrate.rocrate_types import PathStr
 
-def as_list(value):
+if typing.TYPE_CHECKING:
+    from rocrate.model import Entity
+
+
+def as_list(value: Any) -> list:
     if isinstance(value, list):
         return value
     return [value]
 
 
-def is_url(string):
+def is_url(string: str) -> bool:
     parts = urlsplit(string)
     if os.name == "nt" and len(parts.scheme) == 1:
         return False
     return bool(parts.scheme)
 
 
-def iso_now():
+def iso_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def subclasses(cls):
+def subclasses(cls: type) -> Generator[type, None, None]:
     """\
     Recursively iterate through all subclasses (direct and indirect) of cls.
 
@@ -58,7 +65,7 @@ def subclasses(cls):
         yield d
 
 
-def get_norm_value(json_entity, prop):
+def get_norm_value(json_entity: Dict[str, Any] | 'Entity', prop: str) -> list[str]:
     """\
     Get a normalized value for a property (always as a list of strings).
     """
@@ -69,7 +76,9 @@ def get_norm_value(json_entity, prop):
         raise ValueError(f"Malformed value for {prop!r}: {json_entity.get(prop)!r}")
 
 
-def walk(top, topdown=True, onerror=None, followlinks=False, exclude=None):
+def walk(
+        top: PathStr, exclude: Optional[list[PathStr]] = None
+) -> Generator[tuple[str, list[str], list[str]], None, None]:
     exclude = frozenset(exclude or [])
     for root, dirs, files in os.walk(top):
         if exclude:

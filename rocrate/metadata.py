@@ -23,9 +23,10 @@ import json
 import warnings
 
 from .model import Metadata, LegacyMetadata
+from .rocrate_types import PathStr, JsonLD
 
 
-def read_metadata(metadata_path):
+def read_metadata(metadata_path: dict | PathStr) -> tuple[dict, dict]:
     """\
     Read an RO-Crate metadata file.
 
@@ -45,7 +46,7 @@ def read_metadata(metadata_path):
     return context, {_["@id"]: _ for _ in graph}
 
 
-def _check_descriptor(descriptor, entities):
+def _check_descriptor(descriptor: JsonLD, entities: JsonLD) -> tuple[str, str]:
     if descriptor["@type"] != "CreativeWork":
         raise ValueError('metadata descriptor must be of type "CreativeWork"')
     try:
@@ -57,7 +58,7 @@ def _check_descriptor(descriptor, entities):
     return descriptor["@id"], root["@id"]
 
 
-def find_root_entity_id(entities):
+def find_root_entity_id(entities: JsonLD) -> tuple[str, str]:
     """\
     Find metadata file descriptor and root data entity.
 

@@ -18,48 +18,52 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
 
 from .contextentity import ContextEntity
 from .creativework import CreativeWork
 
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
+
 
 class SoftwareApplication(ContextEntity, CreativeWork):
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         return {
             "@id": self.id,
             "@type": 'SoftwareApplication'
         }
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.get("name")
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self["name"] = name
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self.get("url")
 
     @url.setter
-    def url(self, url):
+    def url(self, url: str) -> None:
         self["url"] = url
 
     @property
-    def version(self):
+    def version(self) -> str:
         return self.get("version")
 
     @version.setter
-    def version(self, version):
+    def version(self, version: str) -> None:
         self["version"] = version
 
 
 PLANEMO_ID = "https://w3id.org/ro/terms/test#PlanemoEngine"
 
 
-def planemo(crate):
+def planemo(crate: "ROCrate") -> SoftwareApplication:
     return SoftwareApplication(crate, identifier=PLANEMO_ID, properties={
         "name": "Planemo",
         "url": {
@@ -73,7 +77,7 @@ APP_MAP = {
 }
 
 
-def get_app(crate, name):
+def get_app(crate: "ROCrate", name: str) -> SoftwareApplication:
     try:
         func = APP_MAP[name.lower()]
     except KeyError:

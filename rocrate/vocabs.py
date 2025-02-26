@@ -46,12 +46,12 @@ else:
 SCHEMA_MAP = dict((e["@id"], e) for e in SCHEMA["@graph"])
 
 
-def term_to_uri(name):
+def term_to_uri(name: str) -> str:
     # NOTE: Assumes RO-Crate's flat-style context
     return RO_CRATE["@context"][name]
 
 
-def schema_doc(uri):
+def schema_doc(uri: str) -> str:
     # NOTE: Ensure rdfs:comment still appears in newer schema.org downloads
     # TODO: Support terms outside schema.org?
     return SCHEMA_MAP[uri].get("rdfs:comment", "")

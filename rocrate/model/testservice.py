@@ -18,36 +18,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
 
 from .contextentity import ContextEntity
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class TestService(ContextEntity):
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         return {
             "@id": self.id,
             "@type": 'TestService'
         }
 
     @property
-    def _default_type(self):
+    def _default_type(self) -> str:
         return "TestService"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.get("name")
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self["name"] = name
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self.get("url")
 
     @url.setter
-    def url(self, url):
+    def url(self, url: str) -> None:
         self["url"] = url
 
 
@@ -56,7 +60,7 @@ TRAVIS_ID = "https://w3id.org/ro/terms/test#TravisService"
 GITHUB_ID = "https://w3id.org/ro/terms/test#GithubService"
 
 
-def jenkins(crate):
+def jenkins(crate: "ROCrate") -> TestService:
     return TestService(crate, identifier=JENKINS_ID, properties={
         "name": "Jenkins",
         "url": {
@@ -65,7 +69,7 @@ def jenkins(crate):
     })
 
 
-def travis(crate):
+def travis(crate: "ROCrate") -> TestService:
     return TestService(crate, identifier=TRAVIS_ID, properties={
         "name": "Travis CI",
         "url": {
@@ -74,7 +78,7 @@ def travis(crate):
     })
 
 
-def github(crate):
+def github(crate: "ROCrate") -> TestService:
     return TestService(crate, identifier=GITHUB_ID, properties={
         "name": "Github Actions",
         "url": {
@@ -90,7 +94,7 @@ SERVICE_MAP = {
 }
 
 
-def get_service(crate, name):
+def get_service(crate: "ROCrate", name: str) -> TestService:
     try:
         func = SERVICE_MAP[name.lower()]
     except KeyError:

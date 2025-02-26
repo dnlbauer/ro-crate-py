@@ -22,12 +22,19 @@
 # limitations under the License.
 
 from .dataset import Dataset
+from ..rocrate_types import PathStr
 from ..utils import iso_now
+import typing
+from typing import Optional
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class RootDataset(Dataset):
 
-    def __init__(self, crate, source=None, dest_path=None, properties=None):
+    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
+                 properties: Optional[dict] = None) -> None:
         if source is None and dest_path is None:
             dest_path = "./"
         super().__init__(
@@ -39,7 +46,7 @@ class RootDataset(Dataset):
             properties=properties
         )
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         val = {
             "@id": self.id,
             "@type": "Dataset",

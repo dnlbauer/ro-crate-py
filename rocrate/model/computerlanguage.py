@@ -19,57 +19,62 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
+from typing import Optional
 
 from .contextentity import ContextEntity
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class ComputerLanguage(ContextEntity):
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         return {
             "@id": self.id,
             "@type": 'ComputerLanguage'
         }
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.get("name")
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self["name"] = name
 
     @property
-    def alternateName(self):
+    def alternateName(self) -> str:
         return self.get("alternateName")
 
     @alternateName.setter
-    def alternateName(self, alternateName):
+    def alternateName(self, alternateName: str) -> None:
         self["alternateName"] = alternateName
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return self.get("identifier")
 
     @identifier.setter
-    def identifier(self, identifier):
+    def identifier(self, identifier: str) -> None:
         self["identifier"] = identifier
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self.get("url")
 
     @url.setter
-    def url(self, url):
+    def url(self, url: str) -> None:
         self["url"] = url
 
     # Not listed as a property in "https://schema.org/ComputerLanguage"
     @property
-    def version(self):
+    def version(self) -> str:
         return self.get("version")
 
     @version.setter
-    def version(self, version):
+    def version(self, version: str) -> None:
         self["version"] = version
 
 
@@ -77,7 +82,7 @@ class ComputerLanguage(ContextEntity):
 # (note that it does not specify "version")
 
 
-def cwl(crate, version=None):
+def cwl(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#cwl"
     identifier = "https://w3id.org/cwl/"
     if version:
@@ -97,7 +102,7 @@ def cwl(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def galaxy(crate, version=None):
+def galaxy(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#galaxy"
     properties = {
         "name": "Galaxy",
@@ -113,7 +118,7 @@ def galaxy(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def knime(crate, version=None):
+def knime(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#knime"
     properties = {
         "name": "KNIME",
@@ -129,7 +134,7 @@ def knime(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def nextflow(crate, version=None):
+def nextflow(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#nextflow"
     properties = {
         "name": "Nextflow",
@@ -145,7 +150,7 @@ def nextflow(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def snakemake(crate, version=None):
+def snakemake(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#snakemake"
     properties = {
         "name": "Snakemake",
@@ -161,7 +166,7 @@ def snakemake(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def compss(crate, version=None):
+def compss(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     properties = {
         "name": "COMPSs Programming Model",
         "alternateName": "COMPSs",
@@ -173,7 +178,7 @@ def compss(crate, version=None):
     return ComputerLanguage(crate, identifier="#compss", properties=properties)
 
 
-def autosubmit(crate, version=None):
+def autosubmit(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     properties = {
         "name": "Autosubmit",
         "alternateName": "AS",
@@ -196,7 +201,7 @@ LANG_MAP = {
 }
 
 
-def get_lang(crate, name, version=None):
+def get_lang(crate: "ROCrate", name: str, version: Optional[str] = None) -> ComputerLanguage:
     try:
         func = LANG_MAP[name.lower()]
     except KeyError:

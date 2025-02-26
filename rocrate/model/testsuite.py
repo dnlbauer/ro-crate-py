@@ -19,42 +19,47 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
 
-from .contextentity import ContextEntity
+from rocrate.model import ContextEntity
+from rocrate.rocrate_types import JsonLDProperties
+
+if typing.TYPE_CHECKING:
+    from rocrate.model import TestInstance, TestDefinition
 
 
 class TestSuite(ContextEntity):
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         return {
             "@id": self.id,
             "@type": 'TestSuite'
         }
 
     @property
-    def _default_type(self):
+    def _default_type(self) -> str:
         return "TestSuite"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.get("name")
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self["name"] = name
 
     @property
-    def instance(self):
-        return self.get("instance")
+    def instance(self) -> "TestInstance":
+        return self.get("instance")  # type: ignore
 
     @instance.setter
-    def instance(self, instance):
+    def instance(self, instance: "TestInstance") -> None:
         self["instance"] = instance
 
     @property
-    def definition(self):
-        return self.get("definition")
+    def definition(self) -> "TestDefinition":
+        return self.get("definition")  # type: ignore
 
     @definition.setter
-    def definition(self, definition):
+    def definition(self, definition: "TestDefinition") -> None:
         self["definition"] = definition

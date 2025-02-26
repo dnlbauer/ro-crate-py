@@ -19,36 +19,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from . import SoftwareApplication
 from .file import File
+from typing import Any
 
 
 class TestDefinition(File):
 
-    def _empty(self):
+    def _empty(self) -> dict[str, Any]:
         return {
             "@id": self.id,
             "@type": ['File', 'TestDefinition']
         }
 
     @property
-    def _default_type(self):
+    def _default_type(self) -> str:
         return "TestDefinition"
 
     @property
-    def engineVersion(self):
+    def engineVersion(self) -> str:
         return self.get("engineVersion")
 
     @engineVersion.setter
-    def engineVersion(self, engineVersion):
+    def engineVersion(self, engineVersion: str) -> None:
         self["engineVersion"] = engineVersion
 
     @property
-    def conformsTo(self):
-        return self.get("conformsTo")
+    def conformsTo(self) -> SoftwareApplication:
+        return self.get("conformsTo")  # type: ignore
 
     @conformsTo.setter
-    def conformsTo(self, conformsTo):
+    def conformsTo(self, conformsTo: SoftwareApplication) -> None:
         self["conformsTo"] = conformsTo
 
     engine = conformsTo

@@ -30,7 +30,10 @@ import tempfile
 import warnings
 
 from collections import OrderedDict
+from datetime import datetime
+from io import BytesIO
 from pathlib import Path
+from typing import Optional, cast, ValuesView, Generator, Any
 from urllib.parse import urljoin
 
 from .memory_buffer import MemoryBuffer
@@ -53,18 +56,20 @@ from .model import (
     TestService,
     TestSuite,
     WorkflowDescription,
+    Person,
 )
 from .model.metadata import WORKFLOW_PROFILE, TESTING_EXTRA_TERMS, metadata_class
 from .model.computationalworkflow import galaxy_to_abstract_cwl
 from .model.computerlanguage import get_lang
 from .model.testservice import get_service
 from .model.softwareapplication import get_app
+from .rocrate_types import PathStr, JsonLD
 
 from .utils import is_url, subclasses, get_norm_value, walk, as_list
 from .metadata import read_metadata, find_root_entity_id
 
 
-def pick_type(json_entity, type_map, fallback=None):
+def pick_type(json_entity: JsonLD, type_map: dict[str, type], fallback: type) -> type:
     try:
         t = json_entity["@type"]
     except KeyError:
@@ -78,7 +83,12 @@ def pick_type(json_entity, type_map, fallback=None):
 
 class ROCrate():
 
-    def __init__(self, source=None, gen_preview=False, init=False, exclude=None):
+    preview: Optional[Preview]
+    __entity_map: dict
+    source: Optional[PathStr | dict]
+
+    def __init__(self, source: Optional[PathStr | dict] = None, gen_preview: bool = False, init: bool = False,
+                 exclude: Optional[list[PathStr]] = None) -> None:
         self.source = source
         self.exclude = exclude
         self.__entity_map = {}
@@ -101,18 +111,18 @@ class ROCrate():
         # in the zip case, self.source is the extracted dir
         self.source = source
 
-    def __init_from_tree(self, top_dir, gen_preview=False):
+    def __init_from_tree(self, top_dir: PathStr, gen_preview: bool = False) -> None:
         top_dir = Path(top_dir)
         if not top_dir.is_dir():
             raise NotADirectoryError(errno.ENOTDIR, f"'{top_dir}': not a directory")
         self.add(RootDataset(self), Metadata(self))
         for root, dirs, files in walk(top_dir, exclude=self.exclude):
-            root = Path(root)
+            root_path = Path(root)
             for name in dirs:
-                source = root / name
+                source = root_path / name
                 self.add_dataset(source, source.relative_to(top_dir))
             for name in files:
-                source = root / name
+                source = root_path / name
                 if source == top_dir / Metadata.BASENAME or source == top_dir / LegacyMetadata.BASENAME:
                     continue
                 if source != top_dir / Preview.BASENAME:
@@ -120,7 +130,7 @@ class ROCrate():
                 elif not gen_preview:
                     self.add(Preview(self, source))
 
-    def __read(self, source, gen_preview=False):
+    def __read(self, source: PathStr | dict, gen_preview: bool = False) -> PathStr | dict:
         if isinstance(source, dict):
             metadata_path = source
         else:
@@ -133,17 +143,17 @@ class ROCrate():
                 with zipfile.ZipFile(source, "r") as zf:
                     zf.extractall(zip_path)
                 source = Path(zip_path)
-            metadata_path = source / Metadata.BASENAME
-            if not metadata_path.is_file():
-                metadata_path = source / LegacyMetadata.BASENAME
-            if not metadata_path.is_file():
+            metadata_path = source / Metadata.BASENAME  # type: ignore
+            if not cast(Path, metadata_path).is_file():
+                metadata_path = source / LegacyMetadata.BASENAME  # type: ignore
+            if not cast(Path, metadata_path).is_file():
                 raise ValueError(f"Not a valid RO-Crate: missing {Metadata.BASENAME}")
         _, entities = read_metadata(metadata_path)
         self.__read_data_entities(entities, source, gen_preview)
         self.__read_contextual_entities(entities)
         return source
 
-    def __read_data_entities(self, entities, source, gen_preview):
+    def __read_data_entities(self, entities: JsonLD, source: Path | dict, gen_preview: bool) -> None:
         if isinstance(source, dict):
             source = Path("")
         metadata_id, root_id = find_root_entity_id(entities)
@@ -160,7 +170,7 @@ class ROCrate():
             self.add(Preview(self, source / Preview.BASENAME, properties=preview_entity))
         self.__add_parts(parts, entities, source)
 
-    def __add_parts(self, parts, entities, source):
+    def __add_parts(self, parts: list[JsonLD], entities: JsonLD, source: Path) -> None:
         type_map = OrderedDict((_.__name__, _) for _ in subclasses(FileOrDir))
         for data_entity_ref in parts:
             id_ = data_entity_ref['@id']
@@ -181,7 +191,7 @@ class ROCrate():
             if instance.type == "Dataset":
                 self.__add_parts(as_list(entity.get("hasPart", [])), entities, source)
 
-    def __read_contextual_entities(self, entities):
+    def __read_contextual_entities(self, entities: JsonLD) -> None:
         type_map = {_.__name__: _ for _ in subclasses(ContextEntity)}
         # types *commonly* used for data entities
         data_entity_types = {"File", "Dataset"}
@@ -193,126 +203,126 @@ class ROCrate():
             self.add(cls(self, identifier, entity))
 
     @property
-    def default_entities(self):
+    def default_entities(self) -> list[DataEntity]:
         return [e for e in self.__entity_map.values()
                 if isinstance(e, (RootDataset, Metadata, LegacyMetadata, Preview))]
 
     @property
-    def data_entities(self):
+    def data_entities(self) -> list[DataEntity]:
         return [e for e in self.__entity_map.values()
                 if not isinstance(e, (RootDataset, Metadata, LegacyMetadata, Preview))
                 and hasattr(e, "write")]
 
     @property
-    def contextual_entities(self):
+    def contextual_entities(self) -> list[ContextEntity]:
         return [e for e in self.__entity_map.values()
                 if not isinstance(e, (RootDataset, Metadata, LegacyMetadata, Preview))
                 and not hasattr(e, "write")]
 
     @property
-    def name(self):
+    def name(self) -> Optional[str]:
         return self.root_dataset.get('name')
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str) -> None:
         self.root_dataset['name'] = value
 
     @property
-    def datePublished(self):
+    def datePublished(self) -> Optional[datetime]:
         return self.root_dataset.datePublished
 
     @datePublished.setter
-    def datePublished(self, value):
+    def datePublished(self, value: datetime) -> None:
         self.root_dataset.datePublished = value
 
     @property
-    def creator(self):
+    def creator(self) -> Optional[Person | list[Person]]:
         return self.root_dataset.get('creator')
 
     @creator.setter
-    def creator(self, value):
+    def creator(self, value: Person | list[Person]) -> None:
         self.root_dataset['creator'] = value
 
     @property
-    def license(self):
+    def license(self) -> Optional[Entity | list[Entity]]:
         return self.root_dataset.get('license')
 
     @license.setter
-    def license(self, value):
+    def license(self, value: Entity | list[Entity]) -> None:
         self.root_dataset['license'] = value
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self.root_dataset.get('description')
 
     @description.setter
-    def description(self, value):
+    def description(self, value: str) -> None:
         self.root_dataset['description'] = value
 
     @property
-    def keywords(self):
+    def keywords(self) -> Optional[list[str]]:
         return self.root_dataset.get('keywords')
 
     @keywords.setter
-    def keywords(self, value):
+    def keywords(self, value: list[str]) -> None:
         self.root_dataset['keywords'] = value
 
     @property
-    def publisher(self):
+    def publisher(self) -> Optional[Person | list[Person]]:
         return self.root_dataset.get('publisher')
 
     @publisher.setter
-    def publisher(self, value):
+    def publisher(self, value: Person | list[Person]) -> None:
         self.root_dataset['publisher'] = value
 
     @property
-    def isBasedOn(self):
+    def isBasedOn(self) -> Optional[Entity | list[Entity]]:
         return self.root_dataset.get('isBasedOn')
 
     @isBasedOn.setter
-    def isBasedOn(self, value):
+    def isBasedOn(self, value: Entity | list[Entity]) -> None:
         self.root_dataset['isBasedOn'] = value
 
     @property
-    def image(self):
+    def image(self) -> Optional[File | list[File]]:
         return self.root_dataset.get('image')
 
     @image.setter
-    def image(self, value):
+    def image(self, value: File | list[File]) -> None:
         self.root_dataset['image'] = value
 
     @property
-    def creativeWorkStatus(self):
+    def creativeWorkStatus(self) -> Optional[str]:
         return self.root_dataset.get('creativeWorkStatus')
 
     @creativeWorkStatus.setter
-    def creativeWorkStatus(self, value):
+    def creativeWorkStatus(self, value: str) -> None:
         self.root_dataset['creativeWorkStatus'] = value
 
     @property
-    def mainEntity(self):
+    def mainEntity(self) -> Optional[ComputationalWorkflow]:
         return self.root_dataset.get('mainEntity')
 
     @mainEntity.setter
-    def mainEntity(self, value):
+    def mainEntity(self, value: ComputationalWorkflow) -> None:
         self.root_dataset['mainEntity'] = value
 
     @property
-    def test_dir(self):
+    def test_dir(self) -> Optional[Dataset]:
         rval = self.dereference("test")
         if rval and "Dataset" in rval.type:
-            return rval
+            return cast(Dataset, rval)
         return None
 
     @property
-    def examples_dir(self):
+    def examples_dir(self) -> Optional[Dataset]:
         rval = self.dereference("examples")
         if rval and "Dataset" in rval.type:
-            return rval
+            return cast(Dataset, rval)
         return None
 
     @property
-    def test_suites(self):
+    def test_suites(self) -> list[TestSuite]:
         mentions = [_ for _ in self.root_dataset.get('mentions', []) if isinstance(_, TestSuite)]
         about = [_ for _ in self.root_dataset.get('about', []) if isinstance(_, TestSuite)]
         if self.test_dir:
@@ -320,25 +330,25 @@ class ROCrate():
             about += legacy_about
         return list(set(mentions + about))  # remove any duplicate refs
 
-    def resolve_id(self, id_):
+    def resolve_id(self, id_: str) -> str:
         if not is_url(id_):
             id_ = urljoin(self.arcp_base_uri, id_)  # also does path normalization
         return id_.rstrip("/")
 
-    def get_entities(self):
+    def get_entities(self) -> ValuesView[Entity]:
         return self.__entity_map.values()
 
-    def _get_root_jsonld(self):
+    def _get_root_jsonld(self) -> None:
         self.root_dataset.properties()
 
-    def dereference(self, entity_id, default=None):
+    def dereference(self, entity_id: str, default: Optional[Entity] = None) -> Optional[Entity]:
         canonical_id = self.resolve_id(entity_id)
         return self.__entity_map.get(canonical_id, default)
 
     get = dereference
 
-    def get_by_type(self, type_, exact=False):
-        type_ = set(as_list(type_))
+    def get_by_type(self, type_: str | list[str], exact: bool = False) -> list[Entity]:
+        type_: set[str] = set(as_list(type_))
         if exact:
             return [_ for _ in self.get_entities() if type_ == set(as_list(_.type))]
         else:
@@ -346,14 +356,14 @@ class ROCrate():
 
     def add_file(
             self,
-            source=None,
-            dest_path=None,
-            fetch_remote=False,
-            validate_url=False,
-            properties=None,
-            record_size=False
-    ):
-        return self.add(File(
+            source: Optional[PathStr] = None,
+            dest_path: Optional[PathStr] = None,
+            fetch_remote: bool = False,
+            validate_url: bool = False,
+            properties: Optional[JsonLD] = None,
+            record_size: bool = False
+    ) -> File:
+        return cast(File, self.add(File(
             self,
             source=source,
             dest_path=dest_path,
@@ -361,33 +371,36 @@ class ROCrate():
             validate_url=validate_url,
             properties=properties,
             record_size=record_size
-        ))
+        )))
 
     def add_dataset(
             self,
-            source=None,
-            dest_path=None,
-            fetch_remote=False,
-            validate_url=False,
-            properties=None
-    ):
-        return self.add(Dataset(
+            source: Optional[PathStr] = None,
+            dest_path: Optional[PathStr] = None,
+            fetch_remote: bool = False,
+            validate_url: bool = False,
+            properties: Optional[JsonLD] = None
+    ) -> Dataset:
+        return cast(Dataset, self.add(Dataset(
             self,
             source=source,
             dest_path=dest_path,
             fetch_remote=fetch_remote,
             validate_url=validate_url,
             properties=properties
-        ))
+        )))
 
     add_directory = add_dataset
 
-    def add_tree(self, source, dest_path=None, properties=None):
+    def add_tree(
+            self, source: PathStr, dest_path: Optional[PathStr] = None,
+            properties: Optional[JsonLD] = None
+    ) -> Dataset:
         if not source:
             raise ValueError("source must refer to an existing local directory")
         top = self.add_dataset(source, dest_path=dest_path)
         dest_path = Path(top.id).as_posix()
-        for e in os.scandir(source):
+        for e in os.scandir(str(source)):
             dest = dest_path / Path(e.path).relative_to(source)
             if e.is_file():
                 file_ = self.add_file(source=e.path, dest_path=dest)
@@ -397,7 +410,7 @@ class ROCrate():
                 top.append_to("hasPart", dir_)
         return top
 
-    def add(self, *entities):
+    def add(self, *entities: Entity) -> Entity | tuple[Entity, ...]:
         """\
         Add one or more entities to this RO-Crate.
 
@@ -424,7 +437,7 @@ class ROCrate():
             self.__entity_map[key] = e
         return entities[0] if len(entities) == 1 else entities
 
-    def delete(self, *entities):
+    def delete(self, *entities: Entity) -> None:
         """\
         Delete one or more entities from this RO-Crate.
 
@@ -449,22 +462,22 @@ class ROCrate():
                     del self.root_dataset._jsonld["hasPart"]
             self.__entity_map.pop(e.canonical_id(), None)
 
-    def _copy_unlisted(self, top, base_path):
+    def _copy_unlisted(self, top: PathStr, base_path: PathStr) -> None:
         for root, dirs, files in walk(top, exclude=self.exclude):
-            root = Path(root)
+            root = Path(root)  # type: ignore
             for name in dirs:
-                source = root / name
+                source = cast(Path, root) / name
                 dest = base_path / source.relative_to(top)
                 dest.mkdir(parents=True, exist_ok=True)
             for name in files:
-                source = root / name
+                source = cast(Path, root) / name
                 rel = source.relative_to(top)
                 if not self.dereference(str(rel)):
                     dest = base_path / rel
                     if not dest.exists() or not dest.samefile(source):
                         shutil.copyfile(source, dest)
 
-    def write(self, base_path):
+    def write(self, base_path: PathStr) -> None:
         base_path = Path(base_path)
         base_path.mkdir(parents=True, exist_ok=True)
         if self.source and not isinstance(self.source, dict):
@@ -474,18 +487,18 @@ class ROCrate():
 
     write_crate = write  # backwards compatibility
 
-    def write_zip(self, out_path):
+    def write_zip(self, out_path: PathStr) -> Path:
         out_path = Path(out_path)
         with open(out_path, "wb") as f:
             for chunk in self._stream_zip(out_path=out_path):
                 f.write(chunk)
         return out_path
 
-    def stream_zip(self, chunk_size=8192):
+    def stream_zip(self, chunk_size: int = 8192) -> Generator[bytes, None, None]:
         """ Create a stream of bytes representing the RO-Crate as a ZIP file. """
         yield from self._stream_zip(chunk_size=chunk_size)
 
-    def _stream_zip(self, chunk_size=8192, out_path=None):
+    def _stream_zip(self, chunk_size: int = 8192, out_path: Optional[Path] = None) -> Generator[bytes, None, None]:
         """ Create a stream of bytes representing the RO-Crate as a ZIP file.
         The out_path argument is used to exclude the file from the ZIP stream if the output is inside the crate folder
         and can be omitted if the stream is not written into a file inside the crate dir.
@@ -500,7 +513,7 @@ class ROCrate():
                                 current_out_file.close()
                             current_file_path = path
                             current_out_file = archive.open(path, mode='w', force_zip64=True)
-                        current_out_file.write(chunk)
+                        cast(BytesIO, current_out_file).write(chunk)
                         while len(buffer) >= chunk_size:
                             yield buffer.read(chunk_size)
                     if current_out_file:
@@ -516,7 +529,7 @@ class ROCrate():
                         if out_path and out_path.samefile(source):
                             continue
 
-                        rel = source.relative_to(self.source)
+                        rel = source.relative_to(cast(Path, self.source))
                         if not self.dereference(str(rel)) and not str(rel) in listed_files:
                             with archive.open(str(rel), mode='w') as out_file, open(source, 'rb') as in_file:
                                 while chunk := in_file.read(chunk_size):
@@ -528,21 +541,22 @@ class ROCrate():
                 yield chunk
 
     def add_workflow(
-            self, source=None, dest_path=None, fetch_remote=False, validate_url=False, properties=None,
-            main=False, lang="cwl", lang_version=None, gen_cwl=False, cls=ComputationalWorkflow,
-            record_size=False
-    ):
-        workflow = self.add(cls(
+            self, source: PathStr, dest_path: Optional[PathStr] = None,
+            fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLD] = None,
+            main: bool = False, lang: str | ComputerLanguage = "cwl", lang_version: Optional[str] = None,
+            gen_cwl: bool = False, cls: type[ComputationalWorkflow] = ComputationalWorkflow, record_size: bool = False
+    ) -> ComputationalWorkflow:
+        workflow = cast(ComputationalWorkflow, self.add(cls(
             self, source=source, dest_path=dest_path, fetch_remote=fetch_remote,
             validate_url=validate_url, properties=properties, record_size=record_size
-        ))
+        )))
         if isinstance(lang, ComputerLanguage):
             assert lang.crate is self
         else:
             lang = get_lang(self, lang, version=lang_version)
             self.add(lang)
         lang_str = lang.id.rsplit("#", 1)[1]
-        workflow.lang = lang
+        workflow.lang = lang  # type: ignore
         if main:
             self.mainEntity = workflow
             profiles = set(_.rstrip("/") for _ in get_norm_value(self.metadata, "conformsTo"))
@@ -557,16 +571,19 @@ class ROCrate():
                 source=cwl_source, dest_path=cwl_dest_path, fetch_remote=fetch_remote, properties=properties,
                 main=False, lang="cwl", gen_cwl=False, cls=WorkflowDescription, record_size=record_size
             )
-            workflow.subjectOf = cwl_workflow
+            workflow.subjectOf = cwl_workflow  # type: ignore
         return workflow
 
-    def add_test_suite(self, identifier=None, name=None, main_entity=None, properties=None):
+    def add_test_suite(
+            self, identifier: Optional[str] = None, name: Optional[str] = None,
+            main_entity: Optional[ComputationalWorkflow] = None, properties: Optional[JsonLD] = None
+    ) -> TestSuite:
         test_ref_prop = "mentions"
         if not main_entity:
             main_entity = self.mainEntity
             if not main_entity:
                 test_ref_prop = "about"
-        suite = self.add(TestSuite(self, identifier, properties=properties))
+        suite = cast(TestSuite, self.add(TestSuite(self, identifier, properties=properties)))
         if not properties or "name" not in properties:
             suite.name = name or suite.id.lstrip("#")
         if main_entity:
@@ -575,9 +592,12 @@ class ROCrate():
         self.metadata.extra_terms.update(TESTING_EXTRA_TERMS)
         return suite
 
-    def add_test_instance(self, suite, url, resource="", service="jenkins", identifier=None, name=None, properties=None):
+    def add_test_instance(
+            self, suite: str, url: str, resource: str = "", service: str | TestService = "jenkins",
+            identifier: Optional[str] = None, name: Optional[str] = None, properties: Optional[JsonLD] = None
+    ) -> TestInstance:
         suite = self.__validate_suite(suite)
-        instance = self.add(TestInstance(self, identifier, properties=properties))
+        instance = cast(TestInstance, self.add(TestInstance(self, identifier, properties=properties)))
         instance.url = url
         instance.resource = resource
         if isinstance(service, TestService):
@@ -585,7 +605,7 @@ class ROCrate():
         else:
             service = get_service(self, service)
             self.add(service)
-        instance.service = service
+        instance.service = service  # type: ignore
         if not properties or "name" not in properties:
             instance.name = name or instance.id.lstrip("#")
         suite.append_to("instance", instance)
@@ -593,35 +613,39 @@ class ROCrate():
         return instance
 
     def add_test_definition(
-            self, suite, source=None, dest_path=None, fetch_remote=False, validate_url=False, properties=None,
-            engine="planemo", engine_version=None, record_size=False
-    ):
+            self, suite: str | TestSuite, source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
+            fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLD] = None,
+            engine: str | SoftwareApplication = "planemo", engine_version: Optional[str] = None, record_size: bool = False
+    ) -> TestDefinition:
         suite = self.__validate_suite(suite)
-        definition = self.add(
+        definition = cast(TestDefinition, self.add(
             TestDefinition(self, source=source, dest_path=dest_path, fetch_remote=fetch_remote,
                            validate_url=validate_url, properties=properties, record_size=record_size)
-        )
+        ))
         if isinstance(engine, SoftwareApplication):
             assert engine.crate is self
         else:
             engine = get_app(self, engine)
             self.add(engine)
-        definition.engine = engine
+        definition.engine = cast(SoftwareApplication, engine)  # type: ignore
         if engine_version is not None:
             definition.engineVersion = engine_version
-        suite.definition = definition
+        suite.definition = definition  # type: ignore
         self.metadata.extra_terms.update(TESTING_EXTRA_TERMS)
         return definition
 
-    def add_action(self, instrument, identifier=None, object=None, result=None, properties=None):
+    def add_action(
+            self, instrument: Entity, identifier: Optional[str] = None, object: Optional[list[Entity]] = None,
+            result: Optional[list[Entity]] = None, properties: Optional[JsonLD] = None
+    ) -> ContextEntity:
         if properties is None:
             properties = {}
         if "@type" not in properties:
             properties["@type"] = "CreateAction"
-        action = self.add(ContextEntity(self, identifier, properties=properties))
+        action = cast(ContextEntity, self.add(ContextEntity(self, identifier, properties=properties)))
         action["instrument"] = instrument
         if "name" not in properties:
-            action.name = action.id.lstrip("#")
+            action.name = action.id.lstrip("#")  # type: ignore
         if object:
             action["object"] = object
         if result:
@@ -670,7 +694,7 @@ class ROCrate():
             ContextEntity(self, identifier=identifier, properties=props)
         )
 
-    def add_jsonld(self, jsonld):
+    def add_jsonld(self, jsonld: JsonLD) -> ContextEntity:
         """Add a JSON-LD dictionary as a contextual entity to the RO-Crate.
 
         The `@id` and `@type` keys must be present in the JSON-LD dictionary.
@@ -689,13 +713,13 @@ class ROCrate():
         entity_id = jsonld.pop("@id")
         if self.get(entity_id):
             raise ValueError(f"entity {entity_id} already exists in the RO-Crate")
-        return self.add(ContextEntity(
+        return cast(ContextEntity, self.add(ContextEntity(
             self,
             entity_id,
             properties=jsonld
-        ))
+        )))
 
-    def update_jsonld(self, jsonld):
+    def update_jsonld(self, jsonld: JsonLD) -> Entity:
         """Update an entity in the RO-Crate from a JSON-LD dictionary.
 
         An `@id` must be present in the JSON-LD dictionary. Any other keys
@@ -712,14 +736,14 @@ class ROCrate():
         if not jsonld or "@id" not in jsonld:
             raise ValueError("you must provide a non-empty JSON-LD dictionary")
         entity_id = jsonld.pop("@id")
-        entity: Entity = self.get(entity_id)
+        entity = self.get(entity_id) if entity_id else None
         if not entity:
             raise ValueError(f"entity {entity_id} does not exist in the RO-Crate")
         jsonld = {k: v for k, v in jsonld.items() if not k.startswith('@')}
         entity._jsonld.update(jsonld)
         return entity
 
-    def add_or_update_jsonld(self, jsonld):
+    def add_or_update_jsonld(self, jsonld: JsonLD) -> Entity:
         """Add or update an entity from a JSON-LD dictionary.
 
         An `@id` must be present in the JSON-LD dictionary.
@@ -735,23 +759,26 @@ class ROCrate():
         if not jsonld or "@id" not in jsonld:
             raise ValueError("you must provide a non-empty JSON-LD dictionary")
         entity_id = jsonld.get("@id")
-        entity: Entity = self.get(entity_id)
+        entity = self.get(entity_id) if entity_id else None
         if not entity:
             return self.add_jsonld(jsonld)
         return self.update_jsonld(jsonld)
 
-    def __validate_suite(self, suite):
+    def __validate_suite(self, suite: str | TestSuite) -> TestSuite:
         if isinstance(suite, TestSuite):
             assert suite.crate is self
         else:
-            suite = self.dereference(suite)
+            suite = cast(TestSuite, self.dereference(suite))
             if suite is None:
                 raise ValueError("suite not found")
         return suite
 
 
-def make_workflow_rocrate(workflow_path, wf_type, include_files=[],
-                          fetch_remote=False, cwl=None, diagram=None):
+# TODO: What is the actual type of cwl and diagram? They are not used properly
+def make_workflow_rocrate(
+        workflow_path: PathStr, wf_type: str, include_files: list[PathStr] = [], fetch_remote: bool = False,
+        cwl: Optional[Any] = None, diagram: Any = None
+) -> ROCrate:
     wf_crate = ROCrate()
     workflow_path = Path(workflow_path)
     wf_crate.add_workflow(

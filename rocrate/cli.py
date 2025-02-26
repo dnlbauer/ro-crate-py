@@ -22,13 +22,17 @@
 
 import os
 from pathlib import Path
+from typing import Optional
 
 import click
+
+from rocrate.model import ComputationalWorkflow
+from rocrate.rocrate_types import PathStr
 from .rocrate import ROCrate
 from .model.computerlanguage import LANG_MAP
 from .model.testservice import SERVICE_MAP
 from .model.softwareapplication import APP_MAP
-
+from click.core import Context, Parameter
 
 LANG_CHOICES = list(LANG_MAP)
 SERVICE_CHOICES = list(SERVICE_MAP)
@@ -38,7 +42,7 @@ ENGINE_CHOICES = list(APP_MAP)
 class CSVParamType(click.ParamType):
     name = "csv"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: str, param: Optional[Parameter], ctx: Optional[Context]) -> list[str]:
         if isinstance(value, (list, tuple, set, frozenset)):
             return value
         try:
@@ -50,7 +54,7 @@ class CSVParamType(click.ParamType):
 class KeyValueParamType(click.ParamType):
     name = "key_value"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: str, param: Optional[Parameter], ctx: Optional[Context]) -> tuple[str, ...]:
         try:
             return tuple(value.split("=", 1)) if value else ()
         except AttributeError:
@@ -77,7 +81,7 @@ OPTION_PROPS = click.option(
 
 
 @click.group()
-def cli():
+def cli() -> None:
     pass
 
 
@@ -93,7 +97,7 @@ def cli():
     help="Exclude files or directories from the metadata file. NAME may be a single name or a comma-separated list of names.",
 )
 @OPTION_CRATE_PATH
-def init(crate_dir, gen_preview, exclude):
+def init(crate_dir: PathStr, gen_preview: bool, exclude: list[PathStr]) -> None:
     crate = ROCrate(crate_dir, init=True, gen_preview=gen_preview, exclude=exclude)
     crate.metadata.write(crate_dir)
     if crate.preview:
@@ -101,7 +105,7 @@ def init(crate_dir, gen_preview, exclude):
 
 
 @cli.group()
-def add():
+def add() -> None:
     pass
 
 
@@ -109,7 +113,7 @@ def add():
 @click.argument("path", type=click.Path(exists=True, dir_okay=False))
 @OPTION_CRATE_PATH
 @OPTION_PROPS
-def file(crate_dir, path, property):
+def file(crate_dir: PathStr, path: PathStr, property: tuple) -> None:
     crate = ROCrate(crate_dir, init=False, gen_preview=False)
     source = Path(path).resolve(strict=True)
     try:
@@ -125,7 +129,7 @@ def file(crate_dir, path, property):
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
 @OPTION_CRATE_PATH
 @OPTION_PROPS
-def dataset(crate_dir, path, property):
+def dataset(crate_dir: PathStr, path: PathStr, property: tuple) -> None:
     crate = ROCrate(crate_dir, init=False, gen_preview=False)
     source = Path(path).resolve(strict=True)
     try:
@@ -148,7 +152,7 @@ def dataset(crate_dir, path, property):
 )
 @OPTION_CRATE_PATH
 @OPTION_PROPS
-def workflow(crate_dir, path, language, property):
+def workflow(crate_dir: PathStr, path: PathStr, language: str, property: tuple) -> None:
     crate = ROCrate(crate_dir, init=False, gen_preview=False)
     source = Path(path).resolve(strict=True)
     try:
@@ -174,7 +178,8 @@ def workflow(crate_dir, path, language, property):
 @click.option("-m", "--main-entity")
 @OPTION_CRATE_PATH
 @OPTION_PROPS
-def suite(crate_dir, identifier, name, main_entity, property):
+def suite(crate_dir: PathStr, identifier: str, name: str, main_entity: Optional[ComputationalWorkflow],
+          property: tuple) -> None:
     crate = ROCrate(crate_dir, init=False, gen_preview=False)
     suite = crate.add_test_suite(
         identifier=identifier,
@@ -195,7 +200,8 @@ def suite(crate_dir, identifier, name, main_entity, property):
 @click.option("-n", "--name")
 @OPTION_CRATE_PATH
 @OPTION_PROPS
-def instance(crate_dir, suite, url, resource, service, identifier, name, property):
+def instance(crate_dir: PathStr, suite: str, url: str, resource: str, service: str, identifier: str | None,
+             name: str, property: tuple) -> None:
     crate = ROCrate(crate_dir, init=False, gen_preview=False)
     instance_ = crate.add_test_instance(
         suite,
@@ -217,7 +223,8 @@ def instance(crate_dir, suite, url, resource, service, identifier, name, propert
 @click.option("-v", "--engine-version")
 @OPTION_CRATE_PATH
 @OPTION_PROPS
-def definition(crate_dir, suite, path, engine, engine_version, property):
+def definition(crate_dir: PathStr, suite: str, path: PathStr, engine: str, engine_version: str,
+               property: tuple) -> None:
     crate = ROCrate(crate_dir, init=False, gen_preview=False)
     source = Path(path).resolve(strict=True)
     try:
@@ -239,7 +246,7 @@ def definition(crate_dir, suite, path, engine, engine_version, property):
 @cli.command()
 @click.argument("dst", type=click.Path(writable=True))
 @OPTION_CRATE_PATH
-def write_zip(crate_dir, dst):
+def write_zip(crate_dir: PathStr, dst: PathStr) -> None:
     crate = ROCrate(crate_dir, init=False, gen_preview=False)
     crate.write_zip(dst)
 

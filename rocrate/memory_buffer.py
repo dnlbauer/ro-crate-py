@@ -28,16 +28,16 @@ class MemoryBuffer(RawIOBase):
     The buffer automatically resets upon reading to make sure all data is read only once.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._buffer = b''
 
-    def write(self, data):
+    def write(self, data: bytes) -> int:
         if self.closed:
             raise ValueError('write to closed file')
         self._buffer += data
         return len(data)
 
-    def read(self, size=-1):
+    def read(self, size: int = -1) -> bytes:
         if self.closed:
             raise ValueError('read from closed file')
         if size < 0:
@@ -48,5 +48,5 @@ class MemoryBuffer(RawIOBase):
             self._buffer = self._buffer[size:]
         return data
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._buffer)

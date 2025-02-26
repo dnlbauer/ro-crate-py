@@ -18,38 +18,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from os import PathLike
+from typing import Any, TypedDict
 
-from .file import File
-from typing import Any
+# Type alias for a dictionary that represents properties of a JSON-LD entity
+JsonLDProperties = dict[str, Any]
 
+# Type alias for a dictionary that represents a Json-LD object
+JsonLD = TypedDict("JsonLD", {"@context": str | list[str] | dict, "@graph": list[JsonLDProperties]})
 
-class TestDefinition(File):
-
-    def _empty(self) -> dict[str, Any]:
-        return {
-            "@id": self.id,
-            "@type": ['File', 'TestDefinition']
-        }
-
-    @property
-    def _default_type(self) -> str:
-        return "TestDefinition"
-
-    @property
-    def engineVersion(self) -> str:
-        return self.get("engineVersion")
-
-    @engineVersion.setter
-    def engineVersion(self, engineVersion: str) -> None:
-        self["engineVersion"] = engineVersion
-
-    # TODO str or list or dict? JSONLD maybe?
-    @property
-    def conformsTo(self) -> str:
-        return self.get("conformsTo")
-
-    @conformsTo.setter
-    def conformsTo(self, conformsTo: str) -> None:
-        self["conformsTo"] = conformsTo
-
-    engine = conformsTo
+# A type alias for a string that represents a path or a path
+PathStr = str | PathLike[str]

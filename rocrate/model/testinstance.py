@@ -18,52 +18,56 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
 
 from .contextentity import ContextEntity
+
+if typing.TYPE_CHECKING:
+    from . import TestService
 
 
 class TestInstance(ContextEntity):
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         return {
             "@id": self.id,
             "@type": 'TestInstance'
         }
 
     @property
-    def _default_type(self):
+    def _default_type(self) -> str:
         return "TestInstance"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.get("name")
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self["name"] = name
 
     @property
-    def resource(self):
+    def resource(self) -> str:
         return self.get("resource")
 
     @resource.setter
-    def resource(self, resource):
+    def resource(self, resource: str) -> None:
         self["resource"] = resource
 
     @property
-    def runsOn(self):
-        return self.get("runsOn")
+    def runsOn(self) -> "TestService":
+        return self.get("runsOn")  # type: ignore
 
     @runsOn.setter
-    def runsOn(self, runsOn):
+    def runsOn(self, runsOn: "TestService") -> None:
         self["runsOn"] = runsOn
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self.get("url")
 
     @url.setter
-    def url(self, url):
+    def url(self, url: str) -> None:
         self["url"] = url
 
     service = runsOn

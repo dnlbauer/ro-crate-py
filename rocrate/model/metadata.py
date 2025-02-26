@@ -22,11 +22,16 @@
 # limitations under the License.
 
 import json
+import typing
+from typing import Optional, Generator, Any
 from pathlib import Path
 
 from .file import File
 from .dataset import Dataset
+from ..rocrate_types import PathStr, JsonLD
 
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 WORKFLOW_PROFILE = "https://w3id.org/workflowhub/workflow-ro-crate/1.0"
 
@@ -35,10 +40,14 @@ class Metadata(File):
     """\
     RO-Crate metadata file.
     """
+    extra_contexts: list[Any]
+    extra_terms: dict[str, str]
+
     BASENAME = "ro-crate-metadata.json"
     PROFILE = "https://w3id.org/ro/crate/1.1"
 
-    def __init__(self, crate, source=None, dest_path=None, properties=None):
+    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
+                 properties: Optional[dict] = None) -> None:
         if source is None and dest_path is None:
             dest_path = self.BASENAME
         super().__init__(
@@ -53,7 +62,7 @@ class Metadata(File):
         self.extra_contexts = []
         self.extra_terms = {}
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         # default properties of the metadata entry
         val = {"@id": self.id,
                "@type": "CreativeWork",
@@ -62,12 +71,11 @@ class Metadata(File):
         return val
 
     # Generate the crate's `ro-crate-metadata.json`.
-    # @return [String] The rendered JSON-LD as a "prettified" string.
-    def generate(self):
+    def generate(self) -> JsonLD:
         graph = []
         for entity in self.crate.get_entities():
             graph.append(entity.properties())
-        context = [f'{self.PROFILE}/context']
+        context: list[Any] = [f'{self.PROFILE}/context']
         context.extend(self.extra_contexts)
         if self.extra_terms:
             context.append(self.extra_terms)
@@ -75,14 +83,14 @@ class Metadata(File):
             context = context[0]
         return {'@context': context, '@graph': graph}
 
-    def stream(self, chunk_size=8192):
+    def stream(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         content = self.generate()
         yield self.id, str.encode(json.dumps(content, indent=4, sort_keys=True), encoding='utf-8')
 
-    def _has_writeable_stream(self):
+    def _has_writeable_stream(self) -> bool:
         return True
 
-    def write(self, dest_base):
+    def write(self, dest_base: PathStr) -> None:
         write_path = Path(dest_base) / self.id
         super()._write_from_stream(write_path)
 
@@ -115,7 +123,7 @@ TESTING_EXTRA_TERMS = {
 }
 
 
-def metadata_class(descriptor_id):
+def metadata_class(descriptor_id: str) -> type[Metadata]:
     basename = descriptor_id.rsplit("/", 1)[-1]
     if basename == Metadata.BASENAME:
         return Metadata

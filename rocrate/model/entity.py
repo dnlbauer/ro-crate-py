@@ -23,14 +23,20 @@
 
 import uuid
 from collections.abc import MutableMapping
+from datetime import datetime
+from typing import Optional, Any, Iterator, TYPE_CHECKING
 
 from dateutil.parser import isoparse
 from .. import vocabs
+from ..rocrate_types import JsonLD
+
+if TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class Entity(MutableMapping):
 
-    def __init__(self, crate, identifier=None, properties=None):
+    def __init__(self, crate: "ROCrate", identifier: Optional[Any] = None, properties: Optional[dict] = None) -> None:
         self.crate = crate
         if identifier:
             self.__id = self.format_id(identifier)
@@ -45,44 +51,44 @@ class Entity(MutableMapping):
                     self[name] = value
 
     @property
-    def id(self):
+    def id(self) -> str:
         return self.__id
 
     # Format the given ID with rules appropriate for this type.
     # For example, Dataset (directory) data entities SHOULD end with /
-    def format_id(self, identifier):
+    def format_id(self, identifier: Any) -> str:
         return str(identifier)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.id} {self.type}>"
 
-    def properties(self):
+    def properties(self) -> JsonLD:
         return self._jsonld
 
-    def as_jsonld(self):
+    def as_jsonld(self) -> JsonLD:
         return self._jsonld
 
     @property
-    def _default_type(self):
+    def _default_type(self) -> str:
         clsName = self.__class__.__name__
         if clsName in vocabs.RO_CRATE["@context"]:
             return clsName
         return "Thing"
 
-    def canonical_id(self):
+    def canonical_id(self) -> str:
         return self.crate.resolve_id(self.id)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.canonical_id())
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         val = {
             "@id": self.id,
             "@type": self._default_type
         }
         return val
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         v = self._jsonld[key]
         if v is None or key.startswith("@"):
             return v
@@ -100,7 +106,7 @@ class Entity(MutableMapping):
                 deref_values.append(entry)
         return deref_values if isinstance(v, list) else deref_values[0]
 
-    def __setitem__(self, key: str, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         if key.startswith("@"):
             raise KeyError(f"cannot set '{key}'")
         values = value if isinstance(value, list) else [value]
@@ -110,55 +116,55 @@ class Entity(MutableMapping):
         ref_values = [{"@id": _.id} if isinstance(_, Entity) else _ for _ in values]
         self._jsonld[key] = ref_values if isinstance(value, list) else ref_values[0]
 
-    def __delitem__(self, key: str):
+    def __delitem__(self, key: str) -> None:
         if key.startswith("@"):
             raise KeyError(f"cannot delete '{key}'")
         del self._jsonld[key]
 
-    def popitem(self):
+    def popitem(self) -> tuple[str, Any]:
         raise NotImplementedError
 
-    def clear(self):
+    def clear(self) -> None:
         raise NotImplementedError
 
-    def update(self):
+    def update(self, **kwargs) -> None:  # type: ignore
         raise NotImplementedError
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._jsonld)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._jsonld)
 
-    def __contains__(self, key):
+    def __contains__(self, key: Any) -> bool:
         return key in self._jsonld
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Entity):
             return NotImplemented
         return self.id == other.id and self._jsonld == other._jsonld
 
     @property
-    def type(self):
+    def type(self) -> str:
         return self._jsonld['@type']
 
     @property
-    def datePublished(self):
+    def datePublished(self) -> Optional[datetime]:
         d = self.get('datePublished')
         return d if not d else isoparse(d)
 
     @datePublished.setter
-    def datePublished(self, value):
+    def datePublished(self, value: datetime | str) -> None:
         try:
-            value = value.isoformat()
+            value = value.isoformat()  # type: ignore
         except AttributeError:
             pass
         self['datePublished'] = value
 
-    def delete(self):
+    def delete(self) -> None:
         self.crate.delete(self)
 
-    def append_to(self, key: str, value, compact=False):
+    def append_to(self, key: str, value: Any, compact: bool = False) -> None:
         if key.startswith("@"):
             raise KeyError(f"cannot append to '{key}'")
         current_value = self._jsonld.setdefault(key, [])

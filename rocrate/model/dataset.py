@@ -25,17 +25,21 @@
 import errno
 import os
 import warnings
+from io import BufferedWriter
 from pathlib import Path
+from typing import Generator, cast, Any
 from urllib.request import urlopen
 from urllib.parse import unquote
 
 from .file_or_dir import FileOrDir
 from ..utils import is_url, iso_now
+from ..rocrate_types import PathStr
 
 
 class Dataset(FileOrDir):
 
-    def _empty(self):
+    # TODO should this be type JsonLD instead?
+    def _empty(self) -> dict[str, Any]:
         val = {
             "@id": self.id,
             "@type": 'Dataset'
@@ -43,10 +47,10 @@ class Dataset(FileOrDir):
         return val
 
     # SHOULD end with /
-    def format_id(self, identifier):
+    def format_id(self, identifier: str) -> str:
         return identifier.rstrip("/") + "/"
 
-    def _write_from_url(self, base_path):
+    def _write_from_url(self, base_path: Path) -> None:
         if self.validate_url and not self.fetch_remote:
             with urlopen(self.source) as _:
                 self._jsonld['sdDatePublished'] = iso_now()
@@ -60,11 +64,11 @@ class Dataset(FileOrDir):
                     out_file_path = Path(path)
                     out_file_path.parent.mkdir(parents=True, exist_ok=True)
                     out_file = open(out_file_path, 'wb')
-                out_file.write(chunk)
+                cast(BufferedWriter, out_file).write(chunk)
             if out_file:
                 out_file.close()
 
-    def _copy_folder(self, base_path):
+    def _copy_folder(self, base_path: Path) -> None:
         abs_out_path = base_path / unquote(self.id)
         if self.source is None:
             abs_out_path.mkdir(parents=True, exist_ok=True)
@@ -78,14 +82,14 @@ class Dataset(FileOrDir):
             if not self.crate.source:
                 self.crate._copy_unlisted(path, abs_out_path)
 
-    def write(self, base_path):
+    def write(self, base_path: PathStr) -> None:
         base_path = Path(base_path)
         if is_url(str(self.source)):
             self._write_from_url(base_path)
         else:
             self._copy_folder(base_path)
 
-    def stream(self, chunk_size=8192):
+    def stream(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         if self.source is None:
             return
         elif is_url(str(self.source)):
@@ -93,7 +97,7 @@ class Dataset(FileOrDir):
         else:
             yield from self._stream_folder_from_path(chunk_size)
 
-    def _stream_folder_from_path(self, chunk_size=8192):
+    def _stream_folder_from_path(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         path = unquote(str(self.source))
         if not Path(path).exists():
             raise FileNotFoundError(
@@ -115,7 +119,7 @@ class Dataset(FileOrDir):
                     if is_empty:
                         yield str(dest), b""
 
-    def _stream_folder_from_url(self, chunk_size=8192):
+    def _stream_folder_from_url(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         if not self.fetch_remote:
             if self.validate_url:
                 with urlopen(self.source) as _:

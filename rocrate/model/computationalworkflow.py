@@ -22,12 +22,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import atexit
 import os
 import tempfile
+import typing
 from contextlib import redirect_stdout
+from typing import Any
 
 from .file import File
+from ..rocrate_types import PathStr
+
+if typing.TYPE_CHECKING:
+    from . import ComputerLanguage
 
 
 class ComputationalWorkflow(File):
@@ -37,7 +44,7 @@ class ComputationalWorkflow(File):
     """
     TYPES = ["File", "SoftwareSourceCode", "ComputationalWorkflow"]
 
-    def _empty(self):
+    def _empty(self) -> dict[str, str]:
         return {
             "@id": self.id,
             "@type": self.TYPES[:],
@@ -45,21 +52,21 @@ class ComputationalWorkflow(File):
         }
 
     @property
-    def programmingLanguage(self):
+    def programmingLanguage(self) -> "ComputerLanguage" | None:
         return self.get("programmingLanguage")
 
     @programmingLanguage.setter
-    def programmingLanguage(self, programmingLanguage):
+    def programmingLanguage(self, programmingLanguage: "ComputerLanguage") -> None:
         self["programmingLanguage"] = programmingLanguage
 
     language = lang = programmingLanguage
 
     @property
-    def subjectOf(self):
+    def subjectOf(self) -> dict[str, Any]:
         return self.get("subjectOf")
 
     @subjectOf.setter
-    def subjectOf(self, subjectOf):
+    def subjectOf(self, subjectOf: dict[str, Any]) -> None:
         self["subjectOf"] = subjectOf
 
 
@@ -76,7 +83,7 @@ class Workflow(ComputationalWorkflow):
     TYPES = ["File", "SoftwareSourceCode", "Workflow"]
 
 
-def galaxy_to_abstract_cwl(workflow_path, delete=True):
+def galaxy_to_abstract_cwl(workflow_path: PathStr, delete: bool = True) -> str:
     try:
         from galaxy2cwl import get_cwl_interface
     except ImportError:

@@ -26,7 +26,16 @@ import os
 from pathlib import Path
 
 from jinja2 import Template
+
+from . import Entity
 from .file import File
+from typing import Optional, Any, Generator, Callable
+import typing
+
+from ..rocrate_types import PathStr
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class Preview(File):
@@ -37,10 +46,10 @@ class Preview(File):
     """
     BASENAME = "ro-crate-preview.html"
 
-    def __init__(self, crate, source=None, properties=None):
+    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, properties: Optional[dict] = None) -> None:
         super().__init__(crate, source, self.BASENAME, properties=properties)
 
-    def _empty(self):
+    def _empty(self) -> dict[str, Any]:
         # default properties of the metadata entry
         val = {
             "@id": self.BASENAME,
@@ -49,7 +58,7 @@ class Preview(File):
         }
         return val
 
-    def generate_html(self):
+    def generate_html(self) -> str:
         base_path = os.path.abspath(os.path.dirname(__file__))
         template = open(
             os.path.join(base_path, '..', 'templates', 'preview_template.html.j2'),
@@ -57,12 +66,12 @@ class Preview(File):
         )
         src = Template(template.read())
 
-        def template_function(func):
+        def template_function(func: Callable) -> Callable:
             src.globals[func.__name__] = func
             return func
 
         @template_function
-        def stringify(a):
+        def stringify(a: list | str | Entity) -> str:
             if type(a) is list:
                 return ', '.join(a)
             elif type(a) is str:
@@ -74,7 +83,7 @@ class Preview(File):
                     return str(a)
 
         @template_function
-        def is_object_list(a):
+        def is_object_list(a: Any) -> bool:
             if type(a) is list:
                 for obj in a:
                     if obj is not str:
@@ -91,15 +100,15 @@ class Preview(File):
         out_html = src.render(crate=self.crate, context=context_entities, data=data_entities)
         return out_html
 
-    def stream(self, chunk_size=8192):
+    def stream(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         if self.source:
             yield from super().stream()
         else:
             yield self.id, str.encode(self.generate_html(), encoding='utf-8')
 
-    def _has_writeable_stream(self):
+    def _has_writeable_stream(self) -> bool:
         return True
 
-    def write(self, dest_base):
+    def write(self, dest_base: PathStr) -> None:
         write_path = Path(dest_base) / self.id
         super()._write_from_stream(write_path)

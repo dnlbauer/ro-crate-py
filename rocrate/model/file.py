@@ -23,6 +23,8 @@
 # limitations under the License.
 
 from pathlib import Path
+from typing import Generator, cast, Any
+
 import requests
 import shutil
 import urllib.request
@@ -31,19 +33,20 @@ from io import BytesIO, StringIO
 from urllib.parse import unquote
 
 from .file_or_dir import FileOrDir
+from ..rocrate_types import PathStr
 from ..utils import is_url, iso_now
 
 
 class File(FileOrDir):
 
-    def _empty(self):
+    def _empty(self) -> dict[str, Any]:
         val = {
             "@id": self.id,
             "@type": 'File'
         }
         return val
 
-    def _has_writeable_stream(self):
+    def _has_writeable_stream(self) -> bool:
         if isinstance(self.source, (BytesIO, StringIO)):
             return True
         elif is_url(str(self.source)):
@@ -51,7 +54,7 @@ class File(FileOrDir):
         else:
             return self.source is not None
 
-    def _write_from_stream(self, out_file_path):
+    def _write_from_stream(self, out_file_path: Path) -> None:
         if not self._has_writeable_stream():
             # is this does not correspond to a writeable stream (i.e. it is a url but fetch_remote is False),
             # we still want to consume the stream to consume file headers, run the size calculation, etc.
@@ -63,7 +66,7 @@ class File(FileOrDir):
             for _, chunk in self.stream():
                 out_file.write(chunk)
 
-    def _copy_file(self, path, out_file_path):
+    def _copy_file(self, path: PathStr, out_file_path: Path) -> None:
         path = unquote(str(path))
         out_file_path.parent.mkdir(parents=True, exist_ok=True)
         if not out_file_path.exists() or not out_file_path.samefile(path):
@@ -71,7 +74,7 @@ class File(FileOrDir):
         if self.record_size:
             self._jsonld['contentSize'] = str(out_file_path.stat().st_size)
 
-    def write(self, base_path):
+    def write(self, base_path: PathStr) -> None:
         out_file_path = Path(base_path) / unquote(self.id)
         if isinstance(self.source, (BytesIO, StringIO)) or is_url(str(self.source)):
             self._write_from_stream(out_file_path)
@@ -81,22 +84,22 @@ class File(FileOrDir):
         else:
             self._copy_file(self.source, out_file_path)
 
-    def _stream_from_stream(self, stream):
+    def _stream_from_stream(self, stream: BytesIO | StringIO) -> Generator[tuple[str, bytes], None, None]:
         size = 0
         read = stream.read()
         if isinstance(self.source, StringIO):
-            read = read.encode('utf-8')
+            read = cast(str, read).encode('utf-8')
         while len(read) > 0:
-            yield self.id, read
+            yield self.id, cast(bytes, read)
             size += len(read)
             read = stream.read()
             if isinstance(self.source, StringIO):
-                read = read.encode('utf-8')
+                read = cast(str, read).encode('utf-8')
 
         if self.record_size:
             self._jsonld['contentSize'] = str(size)
 
-    def _stream_from_url(self, url, chunk_size=8192):
+    def _stream_from_url(self, url: str, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         if self.fetch_remote or self.validate_url:
             if self.validate_url:
                 if url.startswith("http"):
@@ -112,7 +115,7 @@ class File(FileOrDir):
                 size = 0
                 self._jsonld['contentUrl'] = str(url)
                 with urllib.request.urlopen(url) as response:
-                    while chunk := response.read(chunk_size):
+                    while chunk := response.read(chunk_size):  # type: ignore
                         yield self.id, chunk
                         size += len(chunk)
 
@@ -123,7 +126,7 @@ class File(FileOrDir):
                 if self.record_size:
                     self._jsonld['contentSize'] = str(size)
 
-    def _stream_from_file(self, path, chunk_size=8192):
+    def _stream_from_file(self, path: PathStr, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         path = unquote(str(path))
         size = 0
         with open(path, 'rb') as f:
@@ -138,11 +141,11 @@ class File(FileOrDir):
         if self.record_size:
             self._jsonld['contentSize'] = str(size)
 
-    def stream(self, chunk_size=8192):
+    def stream(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         if isinstance(self.source, (BytesIO, StringIO)):
             yield from self._stream_from_stream(self.source)
         elif is_url(str(self.source)):
-            yield from self._stream_from_url(self.source, chunk_size)
+            yield from self._stream_from_url(str(self.source), chunk_size)
         elif self.source is None:
             # Allows to record a File entity whose @id does not exist, see #73
             warnings.warn(f"No source for {self.id}")

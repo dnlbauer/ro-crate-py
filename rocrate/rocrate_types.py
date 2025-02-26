@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2019-2025 The University of Manchester, UK
 # Copyright 2020-2025 Vlaams Instituut voor Biotechnologie (VIB), BE
 # Copyright 2020-2025 Barcelona Supercomputing Center (BSC), ES
@@ -8,7 +6,6 @@
 # Copyright 2024-2025 Data Centre, SciLifeLab, SE
 # Copyright 2024-2025 National Institute of Informatics (NII), JP
 # Copyright 2025 Senckenberg Society for Nature Research (SGN), DE
-# Copyright 2025 European Molecular Biology Laboratory (EMBL), Heidelberg, DE
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,23 +18,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from os import PathLike
+from typing import Any, TypedDict
 
-from .contextentity import ContextEntity
-from typing import Optional
-import typing
+# Type alias for a dictionary that represents properties of a JSON-LD entity
+JsonLDProperties = dict[str, Any]
 
-if typing.TYPE_CHECKING:
-    from ..rocrate import ROCrate
+# Type alias for a dictionary that represents a Json-LD object
+JsonLD = TypedDict("JsonLD", {"@context": str | list[str] | dict, "@graph": list[JsonLDProperties]})
 
-
-class Person(ContextEntity):
-
-    def __init__(self, crate: "ROCrate", identifier: Optional[str] = None, properties: Optional[dict] = None) -> None:
-        super(Person, self).__init__(crate, identifier, properties)
-
-    def _empty(self) -> dict[str, str]:
-        val = {
-            "@id": self.id,
-            "@type": 'Person'
-        }
-        return val
+# A type alias for a string that represents a path or a path
+PathStr = str | PathLike[str]

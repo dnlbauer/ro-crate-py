@@ -37,7 +37,7 @@ class SoftwareApplication(ContextEntity, CreativeWork):
 
     @property
     def name(self) -> str:
-        return self.get("name")
+        return self.get("name")  # type: ignore
 
     @name.setter
     def name(self, name: str) -> None:
@@ -45,7 +45,7 @@ class SoftwareApplication(ContextEntity, CreativeWork):
 
     @property
     def url(self) -> str:
-        return self.get("url")
+        return self.get("url")  # type: ignore
 
     @url.setter
     def url(self, url: str) -> None:
@@ -53,7 +53,7 @@ class SoftwareApplication(ContextEntity, CreativeWork):
 
     @property
     def version(self) -> str:
-        return self.get("version")
+        return self.get("version")  # type: ignore
 
     @version.setter
     def version(self, version: str) -> None:

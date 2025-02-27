@@ -22,6 +22,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import json
 import typing
 from typing import Optional, Generator, Any
@@ -82,7 +83,7 @@ class Metadata(File):
             context.append(self.extra_terms)
         if len(context) == 1:
             context = context[0]
-        return {'@context': context, '@graph': graph}
+        return {"@context": context, "@graph": graph}  # type: ignore
 
     def stream(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         content = self.generate()

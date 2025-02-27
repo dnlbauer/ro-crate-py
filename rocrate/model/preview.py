@@ -32,7 +32,7 @@ from .file import File
 from typing import Optional, Any, Generator, Callable
 import typing
 
-from ..rocrate_types import PathStr
+from ..rocrate_types import PathStr, JsonLDProperties
 
 if typing.TYPE_CHECKING:
     from ..rocrate import ROCrate
@@ -46,12 +46,13 @@ class Preview(File):
     """
     BASENAME = "ro-crate-preview.html"
 
-    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, properties: Optional[dict] = None) -> None:
+    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None,
+                 properties: Optional[JsonLDProperties] = None) -> None:
         super().__init__(crate, source, self.BASENAME, properties=properties)
 
-    def _empty(self) -> dict[str, Any]:
+    def _empty(self) -> JsonLDProperties:
         # default properties of the metadata entry
-        val = {
+        val: JsonLDProperties = {
             "@id": self.BASENAME,
             "@type": "CreativeWork",
             "about": {"@id": "./"}

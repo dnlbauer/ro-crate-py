@@ -23,6 +23,7 @@ import typing
 from typing import Optional
 
 from .contextentity import ContextEntity
+from ..rocrate_types import JsonLDProperties
 
 if typing.TYPE_CHECKING:
     from ..rocrate import ROCrate
@@ -30,7 +31,7 @@ if typing.TYPE_CHECKING:
 
 class ComputerLanguage(ContextEntity):
 
-    def _empty(self) -> dict[str, str]:
+    def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
             "@type": 'ComputerLanguage'
@@ -87,7 +88,7 @@ def cwl(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     identifier = "https://w3id.org/cwl/"
     if version:
         identifier = f"{identifier}v{version.lstrip('v')}/"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Common Workflow Language",
         "alternateName": "CWL",
         "identifier": {
@@ -104,7 +105,7 @@ def cwl(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
 
 def galaxy(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#galaxy"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Galaxy",
         "identifier": {
             "@id": "https://galaxyproject.org/"
@@ -120,7 +121,7 @@ def galaxy(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
 
 def knime(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#knime"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "KNIME",
         "identifier": {
             "@id": "https://www.knime.com/"
@@ -136,7 +137,7 @@ def knime(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
 
 def nextflow(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#nextflow"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Nextflow",
         "identifier": {
             "@id": "https://www.nextflow.io/"
@@ -152,7 +153,7 @@ def nextflow(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguag
 
 def snakemake(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#snakemake"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Snakemake",
         "identifier": {
             "@id": "https://doi.org/10.1093/bioinformatics/bts480"
@@ -167,7 +168,7 @@ def snakemake(crate: "ROCrate", version: Optional[str] = None) -> ComputerLangua
 
 
 def compss(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
-    properties = {
+    properties: JsonLDProperties = {
         "name": "COMPSs Programming Model",
         "alternateName": "COMPSs",
         "url": "http://compss.bsc.es/",
@@ -179,7 +180,7 @@ def compss(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
 
 
 def autosubmit(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Autosubmit",
         "alternateName": "AS",
         "url": "https://autosubmit.readthedocs.io/",

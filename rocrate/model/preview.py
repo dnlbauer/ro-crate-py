@@ -76,8 +76,8 @@ class Preview(File):
             elif type(a) is str:
                 return a
             else:
-                if a._jsonld and a._jsonld['name']:
-                    return a._jsonld['name']
+                if a._jsonld and a._jsonld['name']:  # type: ignore
+                    return a._jsonld['name']  # type: ignore
                 else:
                     return str(a)
 

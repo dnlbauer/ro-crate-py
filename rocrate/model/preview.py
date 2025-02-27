@@ -82,13 +82,12 @@ class Preview(File):
                     return a
 
         @template_function
-        def is_object_list(a: Any) -> Optional[bool]:
+        def is_object_list(a: Any) -> bool:
             if type(a) is list:
                 for obj in a:
                     if obj is not str:
                         return True
-            else:
-                return False
+            return False
 
         template.close()
         context_entities = []

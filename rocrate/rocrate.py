@@ -62,13 +62,13 @@ from .model.computationalworkflow import galaxy_to_abstract_cwl
 from .model.computerlanguage import get_lang
 from .model.testservice import get_service
 from .model.softwareapplication import get_app
-from .rocrate_types import PathStr, JsonLD
+from .rocrate_types import PathStr, JsonLDProperties
 
 from .utils import is_url, subclasses, get_norm_value, walk, as_list
 from .metadata import read_metadata, find_root_entity_id
 
 
-def pick_type(json_entity: JsonLD, type_map: dict[str, type], fallback: type) -> type:
+def pick_type(json_entity: JsonLDProperties, type_map: dict[str, type], fallback: type) -> type:
     try:
         t = json_entity["@type"]
     except KeyError:
@@ -151,7 +151,7 @@ class ROCrate():
         self.__read_contextual_entities(entities)
         return source
 
-    def __read_data_entities(self, entities: JsonLD, source: Path | dict, gen_preview: bool) -> None:
+    def __read_data_entities(self, entities: dict[str, JsonLDProperties], source: Path | dict, gen_preview: bool) -> None:
         if isinstance(source, dict):
             source = Path("")
         metadata_id, root_id = find_root_entity_id(entities)
@@ -168,7 +168,7 @@ class ROCrate():
             self.add(Preview(self, source / Preview.BASENAME, properties=preview_entity))
         self.__add_parts(parts, entities, source)
 
-    def __add_parts(self, parts: list[JsonLD], entities: JsonLD, source: Path) -> None:
+    def __add_parts(self, parts: list[JsonLDProperties], entities: dict[str, JsonLDProperties], source: Path) -> None:
         type_map = OrderedDict((_.__name__, _) for _ in subclasses(FileOrDir))
         for data_entity_ref in parts:
             id_ = data_entity_ref['@id']
@@ -188,7 +188,7 @@ class ROCrate():
             self.add(instance)
             self.__add_parts(as_list(entity.get("hasPart", [])), entities, source)
 
-    def __read_contextual_entities(self, entities: JsonLD) -> None:
+    def __read_contextual_entities(self, entities: dict[str, JsonLDProperties]) -> None:
         type_map = {_.__name__: _ for _ in subclasses(ContextEntity)}
         # types *commonly* used for data entities
         data_entity_types = {"File", "Dataset"}
@@ -357,7 +357,7 @@ class ROCrate():
             dest_path: Optional[PathStr] = None,
             fetch_remote: bool = False,
             validate_url: bool = False,
-            properties: Optional[JsonLD] = None,
+            properties: Optional[JsonLDProperties] = None,
             record_size: bool = False
     ) -> File:
         return cast(File, self.add(File(
@@ -376,7 +376,7 @@ class ROCrate():
             dest_path: Optional[PathStr] = None,
             fetch_remote: bool = False,
             validate_url: bool = False,
-            properties: Optional[JsonLD] = None
+            properties: Optional[JsonLDProperties] = None
     ) -> Dataset:
         return cast(Dataset, self.add(Dataset(
             self,
@@ -391,7 +391,7 @@ class ROCrate():
 
     def add_tree(
             self, source: PathStr, dest_path: Optional[PathStr] = None,
-            properties: Optional[JsonLD] = None
+            properties: Optional[JsonLDProperties] = None
     ) -> Dataset:
         if not source:
             raise ValueError("source must refer to an existing local directory")
@@ -539,7 +539,7 @@ class ROCrate():
 
     def add_workflow(
             self, source: PathStr, dest_path: Optional[PathStr] = None,
-            fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLD] = None,
+            fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLDProperties] = None,
             main: bool = False, lang: str | ComputerLanguage = "cwl", lang_version: Optional[str] = None,
             gen_cwl: bool = False, cls: type[ComputationalWorkflow] = ComputationalWorkflow, record_size: bool = False
     ) -> ComputationalWorkflow:
@@ -573,7 +573,7 @@ class ROCrate():
 
     def add_test_suite(
             self, identifier: Optional[str] = None, name: Optional[str] = None,
-            main_entity: Optional[ComputationalWorkflow] = None, properties: Optional[JsonLD] = None
+            main_entity: Optional[ComputationalWorkflow] = None, properties: Optional[JsonLDProperties] = None
     ) -> TestSuite:
         test_ref_prop = "mentions"
         if not main_entity:
@@ -591,7 +591,7 @@ class ROCrate():
 
     def add_test_instance(
             self, suite: str, url: str, resource: str = "", service: str | TestService = "jenkins",
-            identifier: Optional[str] = None, name: Optional[str] = None, properties: Optional[JsonLD] = None
+            identifier: Optional[str] = None, name: Optional[str] = None, properties: Optional[JsonLDProperties] = None
     ) -> TestInstance:
         suite = self.__validate_suite(suite)
         instance = cast(TestInstance, self.add(TestInstance(self, identifier, properties=properties)))
@@ -611,7 +611,7 @@ class ROCrate():
 
     def add_test_definition(
             self, suite: str | TestSuite, source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
-            fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLD] = None,
+            fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLDProperties] = None,
             engine: str | SoftwareApplication = "planemo", engine_version: Optional[str] = None, record_size: bool = False
     ) -> TestDefinition:
         suite = self.__validate_suite(suite)
@@ -633,7 +633,7 @@ class ROCrate():
 
     def add_action(
             self, instrument: Entity, identifier: Optional[str] = None, object: Optional[list[Entity]] = None,
-            result: Optional[list[Entity]] = None, properties: Optional[JsonLD] = None
+            result: Optional[list[Entity]] = None, properties: Optional[JsonLDProperties] = None
     ) -> ContextEntity:
         if properties is None:
             properties = {}
@@ -650,7 +650,7 @@ class ROCrate():
         self.root_dataset.append_to("mentions", action)
         return action
 
-    def add_jsonld(self, jsonld: JsonLD) -> ContextEntity:
+    def add_jsonld(self, jsonld: Optional[JsonLDProperties]) -> ContextEntity:
         """Add a JSON-LD dictionary as a contextual entity to the RO-Crate.
 
         The `@id` and `@type` keys must be present in the JSON-LD dictionary.
@@ -675,7 +675,7 @@ class ROCrate():
             properties=jsonld
         )))
 
-    def update_jsonld(self, jsonld: JsonLD) -> Entity:
+    def update_jsonld(self, jsonld: Optional[JsonLDProperties]) -> Entity:
         """Update an entity in the RO-Crate from a JSON-LD dictionary.
 
         An `@id` must be present in the JSON-LD dictionary. Any other keys
@@ -699,7 +699,7 @@ class ROCrate():
         entity._jsonld.update(jsonld)
         return entity
 
-    def add_or_update_jsonld(self, jsonld: JsonLD) -> Entity:
+    def add_or_update_jsonld(self, jsonld: Optional[JsonLDProperties]) -> Entity:
         """Add or update an entity from a JSON-LD dictionary.
 
         An `@id` must be present in the JSON-LD dictionary.

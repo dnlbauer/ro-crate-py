@@ -30,7 +30,7 @@ from contextlib import redirect_stdout
 from typing import Any
 
 from .file import File
-from ..rocrate_types import PathStr
+from ..rocrate_types import PathStr, JsonLDProperties
 
 if typing.TYPE_CHECKING:
     from . import ComputerLanguage
@@ -43,7 +43,7 @@ class ComputationalWorkflow(File):
     """
     TYPES = ["File", "SoftwareSourceCode", "ComputationalWorkflow"]
 
-    def _empty(self) -> dict[str, str]:
+    def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
             "@type": self.TYPES[:],

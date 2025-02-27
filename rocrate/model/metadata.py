@@ -28,7 +28,7 @@ from pathlib import Path
 
 from .file import File
 from .dataset import Dataset
-from ..rocrate_types import PathStr, JsonLD
+from ..rocrate_types import PathStr, JsonLD, JsonLDProperties
 
 if typing.TYPE_CHECKING:
     from ..rocrate import ROCrate
@@ -47,7 +47,7 @@ class Metadata(File):
     PROFILE = "https://w3id.org/ro/crate/1.1"
 
     def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
-                 properties: Optional[dict] = None) -> None:
+                 properties: Optional[JsonLDProperties] = None) -> None:
         if source is None and dest_path is None:
             dest_path = self.BASENAME
         super().__init__(
@@ -62,12 +62,12 @@ class Metadata(File):
         self.extra_contexts = []
         self.extra_terms = {}
 
-    def _empty(self) -> dict[str, str]:
+    def _empty(self) -> JsonLDProperties:
         # default properties of the metadata entry
-        val = {"@id": self.id,
-               "@type": "CreativeWork",
-               "conformsTo": {"@id": self.PROFILE},
-               "about": {"@id": "./"}}
+        val: JsonLDProperties = {"@id": self.id,
+                                 "@type": "CreativeWork",
+                                 "conformsTo": {"@id": self.PROFILE},
+                                 "about": {"@id": "./"}}
         return val
 
     # Generate the crate's `ro-crate-metadata.json`.

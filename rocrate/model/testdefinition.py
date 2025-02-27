@@ -20,12 +20,13 @@
 # limitations under the License.
 from . import SoftwareApplication
 from .file import File
-from typing import Any
+
+from ..rocrate_types import JsonLDProperties
 
 
 class TestDefinition(File):
 
-    def _empty(self) -> dict[str, Any]:
+    def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
             "@type": ['File', 'TestDefinition']

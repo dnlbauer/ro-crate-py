@@ -21,6 +21,7 @@
 import typing
 
 from .contextentity import ContextEntity
+from ..rocrate_types import JsonLDProperties
 
 if typing.TYPE_CHECKING:
     from . import TestService
@@ -28,7 +29,7 @@ if typing.TYPE_CHECKING:
 
 class TestInstance(ContextEntity):
 
-    def _empty(self) -> dict[str, str]:
+    def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
             "@type": 'TestInstance'

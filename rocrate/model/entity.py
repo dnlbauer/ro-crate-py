@@ -27,8 +27,9 @@ from datetime import datetime
 from typing import Optional, Any, Iterator, TYPE_CHECKING
 
 from dateutil.parser import isoparse
+
 from .. import vocabs
-from ..rocrate_types import JsonLD
+from ..rocrate_types import JsonLDProperties
 
 if TYPE_CHECKING:
     from ..rocrate import ROCrate
@@ -36,7 +37,8 @@ if TYPE_CHECKING:
 
 class Entity(MutableMapping):
 
-    def __init__(self, crate: "ROCrate", identifier: Optional[Any] = None, properties: Optional[dict] = None) -> None:
+    def __init__(self, crate: "ROCrate", identifier: Optional[Any] = None,
+                 properties: Optional[JsonLDProperties] = None) -> None:
         self.crate = crate
         if identifier:
             self.__id = self.format_id(identifier)
@@ -62,10 +64,10 @@ class Entity(MutableMapping):
     def __repr__(self) -> str:
         return f"<{self.id} {self.type}>"
 
-    def properties(self) -> JsonLD:
+    def properties(self) -> JsonLDProperties:
         return self._jsonld
 
-    def as_jsonld(self) -> JsonLD:
+    def as_jsonld(self) -> JsonLDProperties:
         return self._jsonld
 
     @property
@@ -81,8 +83,8 @@ class Entity(MutableMapping):
     def __hash__(self) -> int:
         return hash(self.canonical_id())
 
-    def _empty(self) -> dict[str, str]:
-        val = {
+    def _empty(self) -> JsonLDProperties:
+        val: JsonLDProperties = {
             "@id": self.id,
             "@type": self._default_type
         }

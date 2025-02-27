@@ -26,7 +26,7 @@ import typing
 from pathlib import Path
 
 from .data_entity import DataEntity
-from ..rocrate_types import PathStr
+from ..rocrate_types import PathStr, JsonLDProperties
 from ..utils import is_url
 from typing import Optional
 
@@ -37,7 +37,7 @@ if typing.TYPE_CHECKING:
 class FileOrDir(DataEntity):
 
     def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
-                 fetch_remote: bool = False, validate_url: bool = False, properties: Optional[dict] = None,
+                 fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLDProperties] = None,
                  record_size: bool = False) -> None:
         if properties is None:
             properties = {}

@@ -30,7 +30,7 @@ if typing.TYPE_CHECKING:
 
 class TestSuite(ContextEntity):
 
-    def _empty(self) -> dict[str, str]:
+    def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
             "@type": 'TestSuite'

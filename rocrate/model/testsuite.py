@@ -41,7 +41,7 @@ class TestSuite(ContextEntity):
 
     @property
     def name(self) -> str:
-        return self.get("name")
+        return self.get("name")  # type: ignore
 
     @name.setter
     def name(self, name: str) -> None:

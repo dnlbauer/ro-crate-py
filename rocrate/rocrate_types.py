@@ -18,14 +18,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from os import PathLike
-from typing import Any, TypedDict
+from typing import Any, TypedDict, Union
 
 # Type alias for a dictionary that represents properties of a JSON-LD entity
 JsonLDProperties = dict[str, Any]
 
 # Type alias for a dictionary that represents a Json-LD object
-JsonLD = TypedDict("JsonLD", {"@context": str | list[str] | dict, "@graph": list[JsonLDProperties]})
+JsonLD = TypedDict("JsonLD", {"@context": Union[str, list[str], dict], "@graph": list[JsonLDProperties]})  # type: ignore
 
 # A type alias for a string that represents a path or a path
-PathStr = str | PathLike[str]
+PathStr = Union[str, PathLike[str]]

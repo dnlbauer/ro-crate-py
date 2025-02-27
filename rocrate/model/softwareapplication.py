@@ -22,6 +22,7 @@ import typing
 
 from .contextentity import ContextEntity
 from .creativework import CreativeWork
+from ..rocrate_types import JsonLDProperties
 
 if typing.TYPE_CHECKING:
     from ..rocrate import ROCrate
@@ -29,7 +30,7 @@ if typing.TYPE_CHECKING:
 
 class SoftwareApplication(ContextEntity, CreativeWork):
 
-    def _empty(self) -> dict[str, str]:
+    def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
             "@type": 'SoftwareApplication'

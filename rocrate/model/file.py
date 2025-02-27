@@ -22,7 +22,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Generator, cast, Any
+from typing import Generator, cast
 
 import requests
 import shutil
@@ -31,14 +31,14 @@ import warnings
 from io import BytesIO, StringIO
 
 from .file_or_dir import FileOrDir
-from ..rocrate_types import PathStr
+from ..rocrate_types import PathStr, JsonLDProperties
 from ..utils import is_url, iso_now
 
 
 class File(FileOrDir):
 
-    def _empty(self) -> dict[str, Any]:
-        val = {
+    def _empty(self) -> JsonLDProperties:
+        val: JsonLDProperties = {
             "@id": self.id,
             "@type": 'File'
         }

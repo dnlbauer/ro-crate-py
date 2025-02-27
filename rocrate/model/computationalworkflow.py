@@ -63,7 +63,7 @@ class ComputationalWorkflow(File):
 
     @property
     def subjectOf(self) -> dict[str, Any]:
-        return self.get("subjectOf")
+        return self.get("subjectOf")  # type: ignore
 
     @subjectOf.setter
     def subjectOf(self, subjectOf: dict[str, Any]) -> None:

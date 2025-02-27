@@ -38,7 +38,7 @@ class ComputerLanguage(ContextEntity):
 
     @property
     def name(self) -> str:
-        return self.get("name")
+        return self.get("name")  # type: ignore
 
     @name.setter
     def name(self, name: str) -> None:
@@ -46,7 +46,7 @@ class ComputerLanguage(ContextEntity):
 
     @property
     def alternateName(self) -> str:
-        return self.get("alternateName")
+        return self.get("alternateName")  # type: ignore
 
     @alternateName.setter
     def alternateName(self, alternateName: str) -> None:
@@ -54,7 +54,7 @@ class ComputerLanguage(ContextEntity):
 
     @property
     def identifier(self) -> str:
-        return self.get("identifier")
+        return self.get("identifier")  # type: ignore
 
     @identifier.setter
     def identifier(self, identifier: str) -> None:
@@ -62,7 +62,7 @@ class ComputerLanguage(ContextEntity):
 
     @property
     def url(self) -> str:
-        return self.get("url")
+        return self.get("url")  # type: ignore
 
     @url.setter
     def url(self, url: str) -> None:
@@ -71,7 +71,7 @@ class ComputerLanguage(ContextEntity):
     # Not listed as a property in "https://schema.org/ComputerLanguage"
     @property
     def version(self) -> str:
-        return self.get("version")
+        return self.get("version")  # type: ignore
 
     @version.setter
     def version(self, version: str) -> None:

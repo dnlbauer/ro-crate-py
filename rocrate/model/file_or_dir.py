@@ -58,7 +58,7 @@ class FileOrDir(DataEntity):
             if not isinstance(source, (str, Path)):
                 raise ValueError("dest_path must be provided if source is not a path or URI")
             if is_url(str(source)):
-                identifier = os.path.basename(source) if fetch_remote else source
+                identifier = os.path.basename(source) if fetch_remote else source  # type: ignore
             else:
                 identifier = os.path.basename(str(source).rstrip("/"))
                 if not crate.source:

@@ -41,7 +41,7 @@ class TestService(ContextEntity):
 
     @property
     def name(self) -> str:
-        return self.get("name")
+        return self.get("name")  # type: ignore
 
     @name.setter
     def name(self, name: str) -> None:
@@ -49,7 +49,7 @@ class TestService(ContextEntity):
 
     @property
     def url(self) -> str:
-        return self.get("url")
+        return self.get("url")  # type: ignore
 
     @url.setter
     def url(self, url: str) -> None:

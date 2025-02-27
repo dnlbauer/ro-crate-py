@@ -32,7 +32,7 @@ class MemoryBuffer(RawIOBase):
     def __init__(self) -> None:
         self._buffer = b''
 
-    def write(self, data: bytes) -> int:
+    def write(self, data: bytes) -> int:  # type: ignore
         if self.closed:
             raise ValueError('write to closed file')
         self._buffer += data

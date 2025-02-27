@@ -38,7 +38,7 @@ class TestDefinition(File):
 
     @property
     def engineVersion(self) -> str:
-        return self.get("engineVersion")
+        return self.get("engineVersion")  # type: ignore
 
     @engineVersion.setter
     def engineVersion(self, engineVersion: str) -> None:

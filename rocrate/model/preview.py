@@ -79,7 +79,7 @@ class Preview(File):
                 if a._jsonld and a._jsonld['name']:  # type: ignore
                     return a._jsonld['name']  # type: ignore
                 else:
-                    return a
+                    return str(a)
 
         @template_function
         def is_object_list(a: Any) -> bool:

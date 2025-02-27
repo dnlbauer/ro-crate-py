@@ -19,38 +19,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .file import File
+from os import PathLike
+from typing import Any, TypedDict, Union
 
-from ..rocrate_types import JsonLDProperties
+# Type alias for a dictionary that represents properties of a JSON-LD entity
+JsonLDProperties = dict[str, Any]
 
+# Type alias for a dictionary that represents a Json-LD object
+JsonLD = TypedDict("JsonLD", {"@context": Union[str, list[str], dict], "@graph": list[JsonLDProperties]})  # type: ignore
 
-class TestDefinition(File):
-
-    def _empty(self) -> JsonLDProperties:
-        return {
-            "@id": self.id,
-            "@type": ['File', 'TestDefinition']
-        }
-
-    @property
-    def _default_type(self) -> str:
-        return "TestDefinition"
-
-    @property
-    def engineVersion(self) -> str:
-        return self.get("engineVersion")  # type: ignore
-
-    @engineVersion.setter
-    def engineVersion(self, engineVersion: str) -> None:
-        self["engineVersion"] = engineVersion
-
-    # TODO str or list or dict? JSONLD maybe?
-    @property
-    def conformsTo(self) -> str:
-        return self.get("conformsTo")  # type: ignore
-
-    @conformsTo.setter
-    def conformsTo(self, conformsTo: str) -> None:
-        self["conformsTo"] = conformsTo
-
-    engine = conformsTo
+# A type alias for a string that represents a path or a path
+PathStr = Union[str, PathLike[str]]

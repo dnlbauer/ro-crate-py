@@ -21,12 +21,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import json
+import typing
+from typing import Optional, Generator, Any
 from pathlib import Path
 
 from .file import File
 from .dataset import Dataset
+from ..rocrate_types import PathStr, JsonLD, JsonLDProperties
 
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 WORKFLOW_PROFILE = "https://w3id.org/workflowhub/workflow-ro-crate/1.0"
 
@@ -35,10 +41,15 @@ class Metadata(File):
     """\
     RO-Crate metadata file.
     """
+    extra_contexts: list[Any]
+    extra_terms: dict[str, str]
+
     BASENAME = "ro-crate-metadata.json"
     PROFILE = "https://w3id.org/ro/crate/1.1"
 
-    def __init__(self, crate, source=None, dest_path=None, properties=None):
+    # TODO type annotation for properties?
+    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
+                 properties: Optional[JsonLDProperties] = None) -> None:
         if source is None and dest_path is None:
             dest_path = self.BASENAME
         super().__init__(
@@ -53,36 +64,35 @@ class Metadata(File):
         self.extra_contexts = []
         self.extra_terms = {}
 
-    def _empty(self):
+    def _empty(self) -> JsonLDProperties:
         # default properties of the metadata entry
-        val = {"@id": self.id,
-               "@type": "CreativeWork",
-               "conformsTo": {"@id": self.PROFILE},
-               "about": {"@id": "./"}}
+        val: JsonLDProperties = {"@id": self.id,
+                                 "@type": "CreativeWork",
+                                 "conformsTo": {"@id": self.PROFILE},
+                                 "about": {"@id": "./"}}
         return val
 
     # Generate the crate's `ro-crate-metadata.json`.
-    # @return [String] The rendered JSON-LD as a "prettified" string.
-    def generate(self):
+    def generate(self) -> JsonLD:
         graph = []
         for entity in self.crate.get_entities():
             graph.append(entity.properties())
-        context = [f'{self.PROFILE}/context']
+        context: list[Any] = [f'{self.PROFILE}/context']
         context.extend(self.extra_contexts)
         if self.extra_terms:
             context.append(self.extra_terms)
         if len(context) == 1:
             context = context[0]
-        return {'@context': context, '@graph': graph}
+        return {"@context": context, "@graph": graph}  # type: ignore
 
-    def stream(self, chunk_size=8192):
+    def stream(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         content = self.generate()
         yield self.id, str.encode(json.dumps(content, indent=4, sort_keys=True), encoding='utf-8')
 
-    def _has_writeable_stream(self):
+    def _has_writeable_stream(self) -> bool:
         return True
 
-    def write(self, dest_base):
+    def write(self, dest_base: PathStr) -> None:
         write_path = Path(dest_base) / self.id
         super()._write_from_stream(write_path)
 
@@ -115,7 +125,7 @@ TESTING_EXTRA_TERMS = {
 }
 
 
-def metadata_class(descriptor_id):
+def metadata_class(descriptor_id: str) -> type[Metadata]:
     basename = descriptor_id.rsplit("/", 1)[-1]
     if basename == Metadata.BASENAME:
         return Metadata

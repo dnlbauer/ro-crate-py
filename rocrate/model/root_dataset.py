@@ -22,7 +22,7 @@
 # limitations under the License.
 
 from .dataset import Dataset
-from ..rocrate_types import PathStr
+from ..rocrate_types import PathStr, JsonLDProperties
 from ..utils import iso_now
 import typing
 from typing import Optional
@@ -34,7 +34,7 @@ if typing.TYPE_CHECKING:
 class RootDataset(Dataset):
 
     def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
-                 properties: Optional[dict] = None) -> None:
+                 properties: Optional[JsonLDProperties] = None) -> None:
         if source is None and dest_path is None:
             dest_path = "./"
         super().__init__(
@@ -46,8 +46,8 @@ class RootDataset(Dataset):
             properties=properties
         )
 
-    def _empty(self) -> dict[str, str]:
-        val = {
+    def _empty(self) -> JsonLDProperties:
+        val: JsonLDProperties = {
             "@id": self.id,
             "@type": "Dataset",
             "datePublished": iso_now(),

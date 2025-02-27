@@ -26,19 +26,18 @@ import os
 import warnings
 from io import BufferedWriter
 from pathlib import Path
-from typing import Generator, cast, Any
+from typing import Generator, cast
 from urllib.request import urlopen
 
 from .file_or_dir import FileOrDir
 from ..utils import is_url, iso_now
-from ..rocrate_types import PathStr
+from ..rocrate_types import PathStr, JsonLDProperties
 
 
 class Dataset(FileOrDir):
 
-    # TODO should this be type JsonLD instead?
-    def _empty(self) -> dict[str, Any]:
-        val = {
+    def _empty(self) -> JsonLDProperties:
+        val: JsonLDProperties = {
             "@id": self.id,
             "@type": 'Dataset'
         }

@@ -50,7 +50,7 @@ class Dataset(FileOrDir):
 
     def _write_from_url(self, base_path: Path) -> None:
         if self.validate_url and not self.fetch_remote:
-            with urlopen(self.source) as _:
+            with urlopen(str(self.source)) as _:
                 self._jsonld['sdDatePublished'] = iso_now()
         if self.fetch_remote:
             out_file_path, out_file = None, None
@@ -100,11 +100,11 @@ class Dataset(FileOrDir):
                 errno.ENOENT, os.strerror(errno.ENOENT), str(self.source)
             )
         if not self.crate.source:
-            for root, _, files in os.walk(self.source):
-                root = Path(root)
+            for root, _, files in os.walk(str(self.source)):
+                root_path = Path(root)
                 for name in files:
-                    source = root / name
-                    dest = source.relative_to(Path(self.source).parent)
+                    source = root_path / name
+                    dest = source.relative_to(Path(self.source).parent)  # type: ignore
                     with open(source, 'rb') as f:
                         while chunk := f.read(chunk_size):
                             yield str(dest), chunk
@@ -112,10 +112,10 @@ class Dataset(FileOrDir):
     def _stream_folder_from_url(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
         if not self.fetch_remote:
             if self.validate_url:
-                with urlopen(self.source) as _:
+                with urlopen(str(self.source)) as _:
                     self._jsonld['sdDatePublished'] = iso_now()
         else:
-            base = self.source.rstrip("/")
+            base = str(self.source).rstrip("/")
             for entry in self._jsonld.get("hasPart", []):
                 try:
                     part = entry["@id"]

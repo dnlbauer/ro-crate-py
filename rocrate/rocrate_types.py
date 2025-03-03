@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2019-2025 The University of Manchester, UK
 # Copyright 2020-2025 Vlaams Instituut voor Biotechnologie (VIB), BE
 # Copyright 2020-2025 Barcelona Supercomputing Center (BSC), ES
@@ -21,25 +19,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os import PathLike
+from typing import Any, TypedDict, Union
 
-from typing import Generator
+# Type alias for a dictionary that represents properties of a JSON-LD entity
+JsonLDProperties = dict[str, Any]
 
-from .entity import Entity
-from ..rocrate_types import PathStr
+# Type alias for a dictionary that represents a Json-LD object
+JsonLD = TypedDict("JsonLD", {"@context": Union[str, list[str], dict], "@graph": list[JsonLDProperties]})  # type: ignore
 
-
-class DataEntity(Entity):
-
-    def write(self, base_path: PathStr) -> None:
-        pass
-
-    def stream(self, chunk_size: int = 8192) -> Generator[tuple[str, bytes], None, None]:
-        """ Stream the data from the source. Each chunk of the content is yielded as a tuple
-        containing the name of the destination file relative to the crate and the chunk of data.
-        The destination file name is required because a DataEntity can be a file or a
-        collection of files (Dataset) and the caller need to know to which file a chunk belongs.
-        For collection of files, the caller can assume that files are streamed one after another,
-        meaning once the destination name changes, a file can be closed and the next one can be
-        openend.
-        """
-        yield from ()
+# A type alias for a string that represents a path or a path
+PathStr = Union[str, PathLike[str]]

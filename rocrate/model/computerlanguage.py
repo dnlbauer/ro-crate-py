@@ -18,57 +18,63 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
+from typing import Optional
 
 from .contextentity import ContextEntity
+from ..rocrate_types import JsonLDProperties
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class ComputerLanguage(ContextEntity):
 
-    def _empty(self):
+    def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
             "@type": 'ComputerLanguage'
         }
 
     @property
-    def name(self):
-        return self.get("name")
+    def name(self) -> str:
+        return self.get("name")  # type: ignore
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self["name"] = name
 
     @property
-    def alternateName(self):
-        return self.get("alternateName")
+    def alternateName(self) -> str:
+        return self.get("alternateName")  # type: ignore
 
     @alternateName.setter
-    def alternateName(self, alternateName):
+    def alternateName(self, alternateName: str) -> None:
         self["alternateName"] = alternateName
 
     @property
-    def identifier(self):
-        return self.get("identifier")
+    def identifier(self) -> str:
+        return self.get("identifier")  # type: ignore
 
     @identifier.setter
-    def identifier(self, identifier):
+    def identifier(self, identifier: str) -> None:
         self["identifier"] = identifier
 
     @property
-    def url(self):
-        return self.get("url")
+    def url(self) -> str:
+        return self.get("url")  # type: ignore
 
     @url.setter
-    def url(self, url):
+    def url(self, url: str) -> None:
         self["url"] = url
 
     # Not listed as a property in "https://schema.org/ComputerLanguage"
     @property
-    def version(self):
-        return self.get("version")
+    def version(self) -> str:
+        return self.get("version")  # type: ignore
 
     @version.setter
-    def version(self, version):
+    def version(self, version: str) -> None:
         self["version"] = version
 
 
@@ -76,12 +82,12 @@ class ComputerLanguage(ContextEntity):
 # (note that it does not specify "version")
 
 
-def cwl(crate, version=None):
+def cwl(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#cwl"
     identifier = "https://w3id.org/cwl/"
     if version:
         identifier = f"{identifier}v{version.lstrip('v')}/"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Common Workflow Language",
         "alternateName": "CWL",
         "identifier": {
@@ -96,9 +102,9 @@ def cwl(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def galaxy(crate, version=None):
+def galaxy(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#galaxy"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Galaxy",
         "identifier": {
             "@id": "https://galaxyproject.org/"
@@ -112,9 +118,9 @@ def galaxy(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def knime(crate, version=None):
+def knime(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#knime"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "KNIME",
         "identifier": {
             "@id": "https://www.knime.com/"
@@ -128,9 +134,9 @@ def knime(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def nextflow(crate, version=None):
+def nextflow(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#nextflow"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Nextflow",
         "identifier": {
             "@id": "https://www.nextflow.io/"
@@ -144,9 +150,9 @@ def nextflow(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def snakemake(crate, version=None):
+def snakemake(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
     id_ = "https://w3id.org/workflowhub/workflow-ro-crate#snakemake"
-    properties = {
+    properties: JsonLDProperties = {
         "name": "Snakemake",
         "identifier": {
             "@id": "https://doi.org/10.1093/bioinformatics/bts480"
@@ -160,8 +166,8 @@ def snakemake(crate, version=None):
     return ComputerLanguage(crate, identifier=id_, properties=properties)
 
 
-def compss(crate, version=None):
-    properties = {
+def compss(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
+    properties: JsonLDProperties = {
         "name": "COMPSs Programming Model",
         "alternateName": "COMPSs",
         "url": "http://compss.bsc.es/",
@@ -172,8 +178,8 @@ def compss(crate, version=None):
     return ComputerLanguage(crate, identifier="#compss", properties=properties)
 
 
-def autosubmit(crate, version=None):
-    properties = {
+def autosubmit(crate: "ROCrate", version: Optional[str] = None) -> ComputerLanguage:
+    properties: JsonLDProperties = {
         "name": "Autosubmit",
         "alternateName": "AS",
         "url": "https://autosubmit.readthedocs.io/",
@@ -195,7 +201,7 @@ LANG_MAP = {
 }
 
 
-def get_lang(crate, name, version=None):
+def get_lang(crate: "ROCrate", name: str, version: Optional[str] = None) -> ComputerLanguage:
     try:
         func = LANG_MAP[name.lower()]
     except KeyError:

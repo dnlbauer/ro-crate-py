@@ -22,16 +22,23 @@
 # limitations under the License.
 
 import os
+import typing
 from pathlib import Path
 
 from .data_entity import DataEntity
+from ..rocrate_types import PathStr, JsonLDProperties
 from ..utils import is_url
+from typing import Optional
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class FileOrDir(DataEntity):
 
-    def __init__(self, crate, source=None, dest_path=None, fetch_remote=False,
-                 validate_url=False, properties=None, record_size=False):
+    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
+                 fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLDProperties] = None,
+                 record_size: bool = False) -> None:
         if properties is None:
             properties = {}
         self.fetch_remote = fetch_remote
@@ -47,7 +54,7 @@ class FileOrDir(DataEntity):
             if not isinstance(source, (str, Path)):
                 raise ValueError("dest_path must be provided if source is not a path or URI")
             if is_url(str(source)):
-                identifier = os.path.basename(source) if fetch_remote else source
+                identifier = os.path.basename(source) if fetch_remote else source  # type: ignore
             else:
                 identifier = os.path.basename(str(source).rstrip("/"))
         super().__init__(crate, identifier, properties)

@@ -27,7 +27,6 @@ import os
 import tempfile
 import typing
 from contextlib import redirect_stdout
-from typing import Any
 
 from .file import File
 from ..rocrate_types import PathStr, JsonLDProperties
@@ -46,7 +45,7 @@ class ComputationalWorkflow(File):
     def _empty(self) -> JsonLDProperties:
         return {
             "@id": self.id,
-            "@type": self.TYPES[:],
+            "@type": self.TYPES[:],  # type: ignore
             "name": os.path.splitext(self.id)[0],
         }
 

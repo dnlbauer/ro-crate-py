@@ -557,7 +557,7 @@ class ROCrate():
             lang = get_lang(self, lang, version=lang_version)
             self.add(lang)
         lang_str = lang.id.rsplit("#", 1)[1]
-        workflow.lang = lang  # type: ignore
+        workflow.programmingLanguage = lang
         if main:
             self.mainEntity = workflow
             profiles = set(_.rstrip("/") for _ in get_norm_value(self.metadata, "conformsTo"))
@@ -572,7 +572,7 @@ class ROCrate():
                 source=cwl_source, dest_path=cwl_dest_path, fetch_remote=fetch_remote, properties=properties,
                 main=False, lang="cwl", gen_cwl=False, cls=WorkflowDescription, record_size=record_size
             )
-            workflow.subjectOf = cwl_workflow  # type: ignore
+            workflow.subjectOf = cwl_workflow
         return workflow
 
     def add_test_suite(
@@ -606,7 +606,7 @@ class ROCrate():
         else:
             service = get_service(self, service)
             self.add(service)
-        instance.service = service  # type: ignore
+        instance.runsOn = service
         if not properties or "name" not in properties:
             instance.name = name or instance.id.lstrip("#")
         suite.append_to("instance", instance)
@@ -628,10 +628,10 @@ class ROCrate():
         else:
             engine = get_app(self, engine)
             self.add(engine)
-        definition.engine = cast(SoftwareApplication, engine)  # type: ignore
+        definition.conformsTo = cast(SoftwareApplication, engine)
         if engine_version is not None:
             definition.engineVersion = engine_version
-        suite.definition = definition  # type: ignore
+        suite.definition = definition
         self.metadata.extra_terms.update(TESTING_EXTRA_TERMS)
         return definition
 
@@ -648,9 +648,9 @@ class ROCrate():
         if "name" not in properties:
             action.name = action.id.lstrip("#")  # type: ignore
         if object:
-            action["object"] = object
+            action["object"] = object  # type: ignore
         if result:
-            action["result"] = result
+            action["result"] = result  # type: ignore
         self.root_dataset.append_to("mentions", action)
         return action
 

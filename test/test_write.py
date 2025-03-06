@@ -111,7 +111,7 @@ def test_in_mem_stream(stream_cls, tmpdir, helpers):
 
     test_file_id = 'a/b/test_file.txt'
     file_content = b'\x00\x01\x02' if stream_cls is io.BytesIO else 'foo'
-    file_returned = crate.add_file(stream_cls(file_content), test_file_id, record_size=True)
+    file_returned = crate.add_file(stream_cls(file_content), test_file_id, record_size=True)  # TODO fix typing to match this case
     assert file_returned.id == test_file_id
 
     out_path = tmpdir / 'ro_crate_out'
@@ -462,7 +462,7 @@ def test_add_tree(test_data_dir, tmpdir):
     assert set(not_listed["hasPart"]) == {not_listed_not_listed_txt}
 
     with pytest.raises(ValueError):
-        crate.add_tree(None, dest_path="foobar")
+        crate.add_tree(None, dest_path="foobar")  # TODO add tree must accept None
 
 
 def test_http_header(tmpdir):

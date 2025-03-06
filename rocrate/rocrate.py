@@ -355,6 +355,7 @@ class ROCrate():
         else:
             return [_ for _ in self.get_entities() if type_ <= set(as_list(_.type))]
 
+    # TODO source can be a stream!
     def add_file(
             self,
             source: Optional[PathStr] = None,

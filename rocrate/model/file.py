@@ -105,10 +105,14 @@ class File(FileOrDir):
             if self.validate_url:
                 if url.startswith("http"):
                     with requests.head(url) as response:
-                        self._jsonld.update({
-                            'contentSize': response.headers.get('Content-Length'),
-                            'encodingFormat': response.headers.get('Content-Type')
-                        })
+                        if "Content-Length" in response.headers:
+                            self._jsonld.update({
+                                'contentSize': response.headers["Content-Length"]
+                            })
+                        if "Content-Type" in response.headers:
+                            self._jsonld.update({
+                                'encodingFormat': response.headers["Content-Type"]
+                            })
                     if not self.fetch_remote:
                         date_published = response.headers.get("Last-Modified", iso_now())
                         self._jsonld['sdDatePublished'] = date_published

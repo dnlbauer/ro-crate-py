@@ -174,7 +174,7 @@ class ROCrate():
     def __add_parts(self, parts: list[JsonLDProperties], entities: dict[str, JsonLDProperties], source: Path) -> None:
         type_map = OrderedDict((_.__name__, _) for _ in subclasses(FileOrDir))
         for data_entity_ref in parts:
-            id_ = data_entity_ref['@id']
+            id_ = cast(str, data_entity_ref['@id'])
             try:
                 entity = entities.pop(id_)
             except KeyError:
@@ -233,8 +233,8 @@ class ROCrate():
         return self.root_dataset.datePublished
 
     @datePublished.setter
-    def datePublished(self, value: datetime) -> None:
-        self.root_dataset.datePublished = value
+    def datePublished(self, value: datetime | str) -> None:
+        self.root_dataset.datePublished = value  # type: ignore
 
     @property
     def creator(self) -> Optional[Person | list[Person]]:
@@ -242,7 +242,7 @@ class ROCrate():
 
     @creator.setter
     def creator(self, value: Person | list[Person]) -> None:
-        self.root_dataset['creator'] = value
+        self.root_dataset['creator'] = value  # type: ignore
 
     @property
     def license(self) -> Optional[Entity | list[Entity]]:
@@ -250,7 +250,7 @@ class ROCrate():
 
     @license.setter
     def license(self, value: Entity | list[Entity]) -> None:
-        self.root_dataset['license'] = value
+        self.root_dataset['license'] = value  # type: ignore
 
     @property
     def description(self) -> Optional[str]:
@@ -266,15 +266,15 @@ class ROCrate():
 
     @keywords.setter
     def keywords(self, value: list[str]) -> None:
-        self.root_dataset['keywords'] = value
+        self.root_dataset['keywords'] = value  # type: ignore
 
     @property
     def publisher(self) -> Optional[Person | list[Person]]:
-        return self.root_dataset.get('publisher')
+        return self.root_dataset.get('publisher')  # type: ignore
 
     @publisher.setter
     def publisher(self, value: Person | list[Person]) -> None:
-        self.root_dataset['publisher'] = value
+        self.root_dataset['publisher'] = value  # type: ignore
 
     @property
     def isBasedOn(self) -> Optional[Entity | list[Entity]]:
@@ -282,7 +282,7 @@ class ROCrate():
 
     @isBasedOn.setter
     def isBasedOn(self, value: Entity | list[Entity]) -> None:
-        self.root_dataset['isBasedOn'] = value
+        self.root_dataset['isBasedOn'] = value  # type: ignore
 
     @property
     def image(self) -> Optional[File | list[File]]:
@@ -290,7 +290,7 @@ class ROCrate():
 
     @image.setter
     def image(self, value: File | list[File]) -> None:
-        self.root_dataset['image'] = value
+        self.root_dataset['image'] = value  # type: ignore
 
     @property
     def creativeWorkStatus(self) -> Optional[str]:
@@ -711,7 +711,7 @@ class ROCrate():
         required_keys = {"@id", "@type"}
         if not jsonld or not required_keys.issubset(jsonld):
             raise ValueError("you must provide a non-empty JSON-LD dictionary with @id and @type set")
-        entity_id = jsonld.pop("@id")
+        entity_id = cast(str, jsonld.pop("@id"))
         if self.get(entity_id):
             raise ValueError(f"entity {entity_id} already exists in the RO-Crate")
         return cast(ContextEntity, self.add(ContextEntity(
@@ -736,7 +736,7 @@ class ROCrate():
         """
         if not jsonld or "@id" not in jsonld:
             raise ValueError("you must provide a non-empty JSON-LD dictionary")
-        entity_id = jsonld.pop("@id")
+        entity_id = cast(str, jsonld.pop("@id"))
         entity = self.get(entity_id) if entity_id else None
         if not entity:
             raise ValueError(f"entity {entity_id} does not exist in the RO-Crate")
@@ -759,7 +759,7 @@ class ROCrate():
         """
         if not jsonld or "@id" not in jsonld:
             raise ValueError("you must provide a non-empty JSON-LD dictionary")
-        entity_id = jsonld.get("@id")
+        entity_id = cast(str, jsonld.get("@id"))
         entity = self.get(entity_id) if entity_id else None
         if not entity:
             return self.add_jsonld(jsonld)

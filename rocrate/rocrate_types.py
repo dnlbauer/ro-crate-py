@@ -18,12 +18,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import typing
+from datetime import datetime
 from os import PathLike
-from typing import Any, TypedDict, Union
+from typing import TypedDict, Union
+
+if typing.TYPE_CHECKING:
+    from rocrate.model import Entity
+
+# Type alias for a dictionary that represents a reference to another Entity
+JsonLDReference = TypedDict("JsonLDReference", {"@id": str})
+
+_JsonLDPrimitiveProperty = Union[str, int, float, bool, datetime, JsonLDReference, "Entity"]
+_JsonLDPropertyList = list[Union[str, int, float, bool, datetime, JsonLDReference, "Entity"]]
+
+# Type alias for a JSON property
+# RO-Crate metadata must be flattened. Therefore, we can restrict possible values to a few non-nested types:
+# A property can be either a JSON-LD primitive, a reference to another entity, or a list of these.
+JsonLDProperty = Union[
+    _JsonLDPrimitiveProperty,
+    _JsonLDPropertyList,
+]
 
 # Type alias for a dictionary that represents properties of a JSON-LD entity
-JsonLDProperties = dict[str, Any]
+JsonLDProperties = dict[str, JsonLDProperty]
 
 # Type alias for a dictionary that represents a Json-LD object
 JsonLD = TypedDict("JsonLD", {"@context": Union[str, list[str], dict], "@graph": list[JsonLDProperties]})  # type: ignore

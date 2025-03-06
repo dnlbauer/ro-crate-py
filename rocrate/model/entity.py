@@ -26,12 +26,13 @@ from __future__ import annotations
 import uuid
 from collections.abc import MutableMapping
 from datetime import datetime
-from typing import Optional, Any, Iterator, TYPE_CHECKING
+from typing import Optional, Any, Iterator, TYPE_CHECKING, cast
 
 from dateutil.parser import isoparse
 
 from .. import vocabs
-from ..rocrate_types import JsonLDProperties
+from ..rocrate_types import JsonLDProperties, JsonLDProperty, _JsonLDPrimitiveProperty, _JsonLDPropertyList, \
+    JsonLDReference
 
 if TYPE_CHECKING:
     from ..rocrate import ROCrate
@@ -92,12 +93,12 @@ class Entity(MutableMapping):
         }
         return val
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> JsonLDProperty | None:
         v = self._jsonld[key]
         if v is None or key.startswith("@"):
             return v
         values = v if isinstance(v, list) else [v]
-        deref_values = []
+        deref_values: list[_JsonLDPrimitiveProperty | Entity] = []
         for entry in values:
             if isinstance(entry, dict):
                 try:
@@ -105,19 +106,23 @@ class Entity(MutableMapping):
                 except KeyError:
                     raise ValueError(f"no @id in {entry}")
                 else:
-                    deref_values.append(self.crate.get(id_, id_))
+                    entity = self.crate.get(id_)
+                    if entity:
+                        deref_values.append(entity)
+                    else:
+                        deref_values.append(id_)
             else:
                 deref_values.append(entry)
         return deref_values if isinstance(v, list) else deref_values[0]
 
-    def __setitem__(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: JsonLDProperty) -> None:
         if key.startswith("@"):
             raise KeyError(f"cannot set '{key}'")
         values = value if isinstance(value, list) else [value]
         for v in values:
             if isinstance(v, dict) and "@id" not in v:
                 raise ValueError(f"no @id in {v}")
-        ref_values = [{"@id": _.id} if isinstance(_, Entity) else _ for _ in values]
+        ref_values = [cast(JsonLDReference, {"@id": _.id}) if isinstance(_, Entity) else _ for _ in values]
         self._jsonld[key] = ref_values if isinstance(value, list) else ref_values[0]
 
     def __delitem__(self, key: str) -> None:
@@ -149,8 +154,8 @@ class Entity(MutableMapping):
         return self.id == other.id and self._jsonld == other._jsonld
 
     @property
-    def type(self) -> str:
-        return self._jsonld['@type']
+    def type(self) -> str | list[str]:
+        return self._jsonld['@type']  # type: ignore
 
     @property
     def datePublished(self) -> Optional[datetime]:
@@ -168,14 +173,15 @@ class Entity(MutableMapping):
     def delete(self) -> None:
         self.crate.delete(self)
 
-    def append_to(self, key: str, value: Any, compact: bool = False) -> None:
+    # TODO must also allow to pass an entity or list of entities
+    def append_to(self, key: str, value: JsonLDProperty | Entity | list[Entity], compact: bool = False) -> None:
         if key.startswith("@"):
             raise KeyError(f"cannot append to '{key}'")
-        current_value = self._jsonld.setdefault(key, [])
+        current_value: JsonLDProperty = self._jsonld.setdefault(key, [])
         if not isinstance(current_value, list):
-            current_value = self._jsonld[key] = [current_value]
+            current_value = self._jsonld[key] = cast(_JsonLDPropertyList, [current_value])
         if not isinstance(value, list):
-            value = [value]
-        current_value.extend([{"@id": _.id} if isinstance(_, Entity) else _ for _ in value])
+            value = cast(_JsonLDPropertyList, [value])
+        current_value.extend([{"@id": _.id} if isinstance(_, Entity) else _ for _ in value])  # type: ignore
         if compact and len(current_value) == 1:
             self._jsonld[key] = current_value[0]

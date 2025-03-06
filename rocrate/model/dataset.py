@@ -31,7 +31,7 @@ from urllib.request import urlopen
 
 from .file_or_dir import FileOrDir
 from ..utils import is_url, iso_now
-from ..rocrate_types import PathStr, JsonLDProperties
+from ..rocrate_types import PathStr, JsonLDProperties, JsonLDReference
 
 
 class Dataset(FileOrDir):
@@ -115,7 +115,7 @@ class Dataset(FileOrDir):
                     self._jsonld['sdDatePublished'] = iso_now()
         else:
             base = str(self.source).rstrip("/")
-            for entry in self._jsonld.get("hasPart", []):
+            for entry in cast(list[JsonLDReference], self._jsonld.get("hasPart", [])):
                 try:
                     part = entry["@id"]
                     if is_url(part) or part.startswith("/"):

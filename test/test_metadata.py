@@ -140,7 +140,7 @@ def test_find_root_multiple_entries():
     check_picks_one(mod_entities)
     # each root candidate contains the other one
     mod_entities = deepcopy(orig_entities)
-    mod_entities["http://example.com/"]["hasPart"] = [
+    mod_entities["http://example.com/"]["hasPart"] = [  # TODO can we fix this with types?
         {"@id": "http://example.org/"},
         {"@id": "http://example.org/ro-crate-metadata.json"}
     ]
@@ -177,7 +177,7 @@ def test_find_root_multiple_types():
     assert m_id == "ro-crate-metadata.json"
     assert r_id == "./"
     # "Dataset" not included
-    del entities["./"]["@type"][0]
+    del entities["./"]["@type"][0]  # TODO can we fix this with types?
     with pytest.raises(ValueError):
         find_root_entity_id(entities)
     # Check we're not trying to be too clever

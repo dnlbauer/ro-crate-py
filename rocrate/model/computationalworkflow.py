@@ -62,11 +62,11 @@ class ComputationalWorkflow(File):
     language = lang = programmingLanguage
 
     @property
-    def subjectOf(self) -> dict[str, Any]:
+    def subjectOf(self) -> ComputationalWorkflow:
         return self.get("subjectOf")  # type: ignore
 
     @subjectOf.setter
-    def subjectOf(self, subjectOf: dict[str, Any]) -> None:
+    def subjectOf(self, subjectOf: ComputationalWorkflow) -> None:
         self["subjectOf"] = subjectOf
 
 

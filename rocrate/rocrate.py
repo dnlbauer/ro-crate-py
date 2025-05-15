@@ -32,7 +32,7 @@ import warnings
 
 from collections import OrderedDict
 from datetime import datetime
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Optional, cast, ValuesView, Generator, Any
 from urllib.parse import urljoin
@@ -355,10 +355,9 @@ class ROCrate():
         else:
             return [_ for _ in self.get_entities() if type_ <= set(as_list(_.type))]
 
-    # TODO source can be a stream!
     def add_file(
             self,
-            source: Optional[PathStr] = None,
+            source: Optional[PathStr | BytesIO | StringIO] = None,
             dest_path: Optional[PathStr] = None,
             fetch_remote: bool = False,
             validate_url: bool = False,

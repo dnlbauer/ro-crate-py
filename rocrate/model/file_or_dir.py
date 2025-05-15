@@ -22,6 +22,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from io import BytesIO, StringIO
 import os
 import typing
 from pathlib import Path
@@ -38,8 +39,9 @@ if typing.TYPE_CHECKING:
 
 class FileOrDir(DataEntity):
 
-    def __init__(self, crate: "ROCrate", source: Optional[PathStr] = None, dest_path: Optional[PathStr] = None,
-                 fetch_remote: bool = False, validate_url: bool = False, properties: Optional[JsonLDProperties] = None,
+    def __init__(self, crate: "ROCrate", source: Optional[PathStr | BytesIO | StringIO] = None,
+                 dest_path: Optional[PathStr] = None, fetch_remote: bool = False,
+                 validate_url: bool = False, properties: Optional[JsonLDProperties] = None,
                  record_size: bool = False) -> None:
         if properties is None:
             properties = {}

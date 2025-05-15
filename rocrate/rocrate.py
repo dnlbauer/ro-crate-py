@@ -64,7 +64,7 @@ from .model.computationalworkflow import galaxy_to_abstract_cwl
 from .model.computerlanguage import get_lang
 from .model.testservice import get_service
 from .model.softwareapplication import get_app
-from .rocrate_types import PathStr, JsonLDProperties
+from .rocrate_types import JsonLDProperty, PathStr, JsonLDProperties
 
 from .utils import is_url, subclasses, get_norm_value, walk, as_list
 from .metadata import read_metadata, find_root_entity_id
@@ -657,14 +657,14 @@ class ROCrate():
 
     def add_formal_parameter(
             self,
-            name,
-            additionalType,
-            identifier=None,
-            description=None,
-            valueRequired=False,
-            defaultValue=None,
-            properties=None
-    ):
+            name: str,
+            additionalType: JsonLDProperty,
+            identifier: Optional[str] = None,
+            description: Optional[str] = None,
+            valueRequired: bool = False,
+            defaultValue: Optional[str] = None,
+            properties: Optional[JsonLDProperties] = None
+    ) -> ContextEntity:
         """\
         Add a FormalParameter to describe an input or output of a workflow.
 
@@ -678,7 +678,7 @@ class ROCrate():
         """
         if properties is None:
             properties = {}
-        props = {
+        props: JsonLDProperties = {
             "@type": "FormalParameter",
             "name": name,
             "additionalType": additionalType,
@@ -692,9 +692,9 @@ class ROCrate():
         if defaultValue:
             props["defaultValue"] = defaultValue
         props.update(properties)
-        return self.add(
+        return cast(ContextEntity, self.add(
             ContextEntity(self, identifier=identifier, properties=props)
-        )
+        ))
 
     def add_jsonld(self, jsonld: Optional[JsonLDProperties]) -> ContextEntity:
         """Add a JSON-LD dictionary as a contextual entity to the RO-Crate.

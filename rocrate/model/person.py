@@ -23,15 +23,23 @@
 # limitations under the License.
 
 from .contextentity import ContextEntity
+from typing import Optional
+import typing
+
+from ..rocrate_types import JsonLDProperties
+
+if typing.TYPE_CHECKING:
+    from ..rocrate import ROCrate
 
 
 class Person(ContextEntity):
 
-    def __init__(self, crate, identifier=None, properties=None):
+    def __init__(self, crate: "ROCrate", identifier: Optional[str] = None,
+                 properties: Optional[JsonLDProperties] = None) -> None:
         super(Person, self).__init__(crate, identifier, properties)
 
-    def _empty(self):
-        val = {
+    def _empty(self) -> JsonLDProperties:
+        val: JsonLDProperties = {
             "@id": self.id,
             "@type": 'Person'
         }

@@ -462,7 +462,7 @@ def test_add_tree(test_data_dir, tmpdir):
     assert set(not_listed["hasPart"]) == {not_listed_not_listed_txt}
 
     with pytest.raises(ValueError):
-        crate.add_tree(None, dest_path="foobar")
+        crate.add_tree(None, dest_path="foobar")  # TODO add tree must accept None
 
 
 def test_http_header(tmpdir):

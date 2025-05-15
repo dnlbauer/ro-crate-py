@@ -20,13 +20,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import json
 import warnings
+from typing import cast
 
 from .model import Metadata, LegacyMetadata
+from .rocrate_types import PathStr, JsonLDProperties, JsonLDReference, _JsonLDPropertyList
 
 
-def read_metadata(metadata_path):
+def read_metadata(metadata_path: dict | PathStr) -> tuple[dict, dict]:
     """\
     Read an RO-Crate metadata file.
 
@@ -46,19 +49,19 @@ def read_metadata(metadata_path):
     return context, {_["@id"]: _ for _ in graph}
 
 
-def _check_descriptor(descriptor, entities):
+def _check_descriptor(descriptor: JsonLDProperties, entities: dict[str, JsonLDProperties]) -> tuple[str, str]:
     if descriptor["@type"] != "CreativeWork":
         raise ValueError('metadata descriptor must be of type "CreativeWork"')
     try:
-        root = entities[descriptor["about"]["@id"]]
+        root = entities[cast(JsonLDReference, descriptor["about"])["@id"]]
     except (KeyError, TypeError):
         raise ValueError("metadata descriptor does not reference the root entity")
     if ("Dataset" not in root["@type"] if isinstance(root["@type"], list) else root["@type"] != "Dataset"):
         raise ValueError('root entity must have "Dataset" among its types')
-    return descriptor["@id"], root["@id"]
+    return cast(str, descriptor["@id"]), root["@id"]  # type: ignore
 
 
-def find_root_entity_id(entities):
+def find_root_entity_id(entities: dict[str, JsonLDProperties]) -> tuple[str, str]:
     """\
     Find metadata file descriptor and root data entity.
 
@@ -106,7 +109,7 @@ def find_root_entity_id(entities):
         for m_id, r_id in candidates:
             try:
                 root = entities[r_id]
-                part_ids = set(_["@id"] for _ in root["hasPart"])
+                part_ids = set(_["@id"] for _ in cast(_JsonLDPropertyList, root["hasPart"]))
             except KeyError:
                 continue
             if part_ids >= descriptor_ids - {m_id}:

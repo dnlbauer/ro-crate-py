@@ -19,6 +19,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import cast
 
 import pytest
 
@@ -33,10 +34,10 @@ from rocrate.model import (
 )
 
 # Tell pytest these are not test classes (so it doesn't try to collect them)
-TestService.__test__ = False
-TestInstance.__test__ = False
-TestDefinition.__test__ = False
-TestSuite.__test__ = False
+TestService.__test__ = False  # type: ignore
+TestInstance.__test__ = False  # type: ignore
+TestDefinition.__test__ = False  # type: ignore
+TestSuite.__test__ = False  # type: ignore
 
 
 JENKINS = "https://w3id.org/ro/terms/test#JenkinsService"
@@ -174,7 +175,7 @@ def test_add_test_suite(test_data_dir):
     suites.add(s3)
     assert suites == set(crate.test_suites)
     wf2_path = top_dir / "README.md"
-    wf2 = crate.add(ComputationalWorkflow(crate, wf2_path, wf2_path.name))
+    wf2 = cast(ComputationalWorkflow, crate.add(ComputationalWorkflow(crate, wf2_path, wf2_path.name)))
     s4 = crate.add_test_suite(identifier="#test3", name="Foo", main_entity=wf2)
     assert s4["mainEntity"] is wf2
     assert s4.id == "#test3"

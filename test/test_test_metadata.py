@@ -34,10 +34,10 @@ from rocrate.model import (
 )
 
 # Tell pytest these are not test classes (so it doesn't try to collect them)
-TestService.__test__ = False
-TestInstance.__test__ = False
-TestDefinition.__test__ = False
-TestSuite.__test__ = False
+TestService.__test__ = False  # type: ignore
+TestInstance.__test__ = False  # type: ignore
+TestDefinition.__test__ = False  # type: ignore
+TestSuite.__test__ = False  # type: ignore
 
 
 JENKINS = "https://w3id.org/ro/terms/test#JenkinsService"

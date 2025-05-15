@@ -111,7 +111,7 @@ def test_in_mem_stream(stream_cls, tmpdir, helpers):
 
     test_file_id = 'a/b/test_file.txt'
     file_content = b'\x00\x01\x02' if stream_cls is io.BytesIO else 'foo'
-    file_returned = crate.add_file(stream_cls(file_content), test_file_id, record_size=True)  # TODO fix typing to match this case
+    file_returned = crate.add_file(stream_cls(file_content), test_file_id, record_size=True)
     assert file_returned.id == test_file_id
 
     out_path = tmpdir / 'ro_crate_out'

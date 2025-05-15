@@ -173,7 +173,6 @@ class Entity(MutableMapping):
     def delete(self) -> None:
         self.crate.delete(self)
 
-    # TODO must also allow to pass an entity or list of entities
     def append_to(self, key: str, value: JsonLDProperty | Entity | list[Entity], compact: bool = False) -> None:
         if key.startswith("@"):
             raise KeyError(f"cannot append to '{key}'")

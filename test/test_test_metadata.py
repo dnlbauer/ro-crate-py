@@ -147,7 +147,7 @@ def test_create():
     test_suite.definition = test_definition
     assert test_suite.name == "Foo Suite"
     assert len(test_suite.instance) == 1
-    assert test_suite.instance[0] is test_instance  # TODO wrong type?
+    assert test_suite.instance[0] is test_instance
     assert test_suite.definition is test_definition
 
 
@@ -198,7 +198,7 @@ def test_add_test_instance(test_data_dir):
     instances = set()
     assert crate.dereference(JENKINS) is None
     assert crate.dereference(TRAVIS) is None
-    i1 = crate.add_test_instance(suite, "http://example.com")  # TODO wrong type
+    i1 = crate.add_test_instance(suite, "http://example.com")
     assert crate.dereference(JENKINS) is i1.service
     assert crate.dereference(TRAVIS) is None
     assert i1.url == "http://example.com"
@@ -224,7 +224,7 @@ def test_add_test_instance(test_data_dir):
     assert i5.id == "#test_1_1"
     instances.add(i5)
     assert instances == set(suite.instance)
-    i6 = crate.add_test_instance(suite, "http://example.com", name="Test 1 Instance 1")  # TODO wrong type
+    i6 = crate.add_test_instance(suite, "http://example.com", name="Test 1 Instance 1")
     assert i6.url == "http://example.com"
     assert i6.name == "Test 1 Instance 1"
     instances.add(i6)

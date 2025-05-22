@@ -106,8 +106,8 @@ class Dataset(FileOrDir):
             for root, _, files in os.walk(path):
                 root_path = Path(root)
                 for name in files:
-                    source = root / name
-                    dest = source.relative_to(Path(path).parent)
+                    source = root_path / name
+                    dest = source.relative_to(root_path.parent)
                     is_empty = True
                     with open(source, 'rb') as f:
                         while chunk := f.read(chunk_size):
